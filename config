@@ -1,0 +1,3 @@
+--keep="highway=motorway =motorway_link =trunk =trunk_link =primary =primary_link =secondary =secondary_link =tertiary =tertiary_link =unclassified =unclassified_link =residential =residential_link 
+#=service --commented line always on new line!!
+=living_street" --drop="access=no"
