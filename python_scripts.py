@@ -1,4 +1,3 @@
-import sys
 import time
 from prune_geojson_file import Pruning_geojson_file
 from simplify_graph import Simplifying_graph
