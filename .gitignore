@@ -2,3 +2,13 @@
 KEY_PROVIDER.py
 #temporary python files
 *.pyc
+#maps
+*.osm
+#osmfilter
+osmfilter32
+#google maps
+data_from_gmaps.py
+#project
+.idea
+#data
+data/

@@ -57,9 +57,9 @@ class Postprocessing:
     def postprocessing_file(self):
         print "processing..."
         for item in self.json_dict['features']:
-            item['properties']['length'] = item['properties']['distance_best_guess']
-            item['properties']['speed'] = item['properties']['speed_best_guess']
-            del item['properties']['distance_best_guess']
+            #item['properties']['length'] = item['properties']['distance_best_guess']
+            #item['properties']['speed'] = item['properties']['speed_best_guess']
+            #del item['properties']['distance_best_guess']
             if 'distance_optimistic' in item['properties']:
                 del item['properties']['distance_optimistic']
             if 'distance_pessimistic' in item['properties']:
