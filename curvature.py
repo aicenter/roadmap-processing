@@ -52,6 +52,7 @@ class Calculation_curvature:
         else:
             total_curvature = 0
             max_curvature = -1
+            length_of_edge = 0
             for i in range(0, len(coords) - 2):
                 point_a = self.get_node(coords[i])
                 point_b = self.get_node(coords[i + 1])
@@ -70,8 +71,9 @@ class Calculation_curvature:
                 if curvature > max_curvature:
                     max_curvature = curvature
                 total_curvature += angle
+                length_of_edge += distance
 
-            length_of_edge = self.get_length(coords)
+            #length_of_edge = self.get_length(coords)
             return [total_curvature / length_of_edge, max_curvature]
 
 
@@ -95,8 +97,8 @@ class Calculation_curvature:
         outfile.close()
 
 #EXAMPLE OF USAGE
-# test = Calculation_curvature("result-out.geojson")
-# test.load_geojson()
-# test.analyse_roads()
-# test.save_geojson()
+#test = Calculation_curvature("data/graph_with_simplified_edges.geojson")
+#test.load_geojson()
+#test.analyse_roads()
+#test.save_geojson()
 

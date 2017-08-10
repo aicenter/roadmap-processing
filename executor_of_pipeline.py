@@ -95,9 +95,11 @@ else:
     err_print("osmfilter doesn't exist!\nplease, download it from: http://wiki.openstreetmap.org/wiki/Osmfilter")
     exit(1)
 
+print("converting OSM to geoJSON...")
 status, version = commands.getstatusoutput("osmtogeojson --version")
 if status==0:
     print("version: {}".format(version))
+    os.system("osmtogeojson data/output.osm > data/output.geojson")
 else:
     print("trying to install osmtogeojson...")
     try:
@@ -112,6 +114,7 @@ else:
             raise
 
 #run pipeline.......
+print("starting python scripts...\n")
 os.system("python2.7 executor_of_python_scripts.py data/output.geojson")
 
 if sys.argv[-1]=='-r':

@@ -14,6 +14,9 @@ class Postprocessing:
     def get_node(self,node):
         return (node[0], node[1])  # order lonlat
 
+    def formated(self,check):
+        self.is_formated = check
+
     def load_geojson_and_graph(self):
         print "loading file..."
         with codecs.open(self.filename, encoding='utf8') as f:
@@ -72,7 +75,10 @@ class Postprocessing:
     def save_geojson(self):
         print "saving file..."
         with open('data/output-final-result.geojson', 'w') as outfile:
-            geojson.dump(self.json_dict, outfile)
+            if self.is_formated==False:
+                geojson.dump(self.json_dict, outfile)
+            else:
+                geojson.dump(self.json_dict, outfile, indent=4, sort_keys=True)
         outfile.close()
 
 #EXAMPLE OF USAGE
