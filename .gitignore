@@ -1,2 +1,4 @@
 #dont send my Google Maps API key
 KEY_PROVIDER.py
+#temporary python files
+*.pyc
