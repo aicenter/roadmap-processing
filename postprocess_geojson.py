@@ -82,9 +82,10 @@ class Postprocessing:
         outfile.close()
 
 #EXAMPLE OF USAGE
-# test = Postprocessing("output-curvature.geojson")
-# test.load_geojson_and_graph()
-# test.is_geojson_valid()
-# test.export_points_to_geojson()
-# test.postprocessing_file()
-# test.save_geojson()
+if __name__ == '__main__':
+    test = Postprocessing("output-curvature.geojson")
+    test.load_geojson_and_graph()
+    test.is_geojson_valid()
+    test.export_points_to_geojson()
+    test.postprocessing_file()
+    test.save_geojson()

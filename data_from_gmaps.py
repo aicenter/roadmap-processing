@@ -67,7 +67,7 @@ class Data_from_gmapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
             nx.write_gpickle(self.g, "data/temp_data.gpickle")
             exit()
 
-    def check(self, value):
+    def set_check_gmaps(self, value):
         self.check = value
 
     def get_node(self, node):
@@ -274,13 +274,14 @@ class Data_from_gmapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 
     def save_file_to_geojson(self):
         print "saving file..."
-        with open("data/result-out.geojson", 'w') as outfile:
+        with open("data/gmaps-out.geojson", 'w') as outfile:
             geojson.dump(self.json_dict, outfile)
         outfile.close()
 
 # EXAMPLE
-# test = Data_from_gmapsAPI("test.geojson")
-# test.check(True) #without check gmaps data
-# test.load_file_and_graph()
-# test.get_gmaps_data()
-# test.save_file_to_geojson()
+if __name__ == '__main__':
+    test = Data_from_gmapsAPI("graph_with_simplified_edges.geojson")
+    test.check(True) #check whether gmaps data is correct
+    test.load_file_and_graph()
+    test.get_gmaps_data()
+    test.save_file_to_geojson()

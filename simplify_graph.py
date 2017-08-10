@@ -222,11 +222,12 @@ class Simplifying_graph():
         outfile.close()
 
 #EXAMPLE OF USAGE
-# test = Simplifying_graph("data/pruned_file.geojson")
-# test.load_file_and_graph()
-# test.set_simplify_lanes(False)
-# test.set_simplify_curvature(False)
-# test.simplify_graph()
-# test.prepare_to_saving_optimized()
-# test.save_file_to_geojson()
+if __name__ == '__main__':
+    test = Simplifying_graph("data/pruned_file.geojson")
+    test.load_file_and_graph()
+    test.set_simplify_lanes(False) #set True whether you don't want to simplify edges with different number of lanes
+    test.set_simplify_curvature(False) #set True whether you don't want to simplify edges with different curvature
+    test.simplify_graph()
+    test.prepare_to_saving_optimized()
+    test.save_file_to_geojson()
 

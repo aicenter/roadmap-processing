@@ -97,7 +97,8 @@ class Pruning_geojson_file:
 
 
 # EXAMPLE OF USAGE
-# test = Pruning_geojson_file("data/output.geojson")
-# test.load_file()
-# test.prune_geojson_file()
-# test.save_pruned_geojson()
+if __name__ == '__main__':
+    test = Pruning_geojson_file("data/output.geojson")
+    test.load_file()
+    test.prune_geojson_file()
+    test.save_pruned_geojson()

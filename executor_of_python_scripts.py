@@ -6,61 +6,67 @@ from data_from_gmaps import Data_from_gmapsAPI
 from curvature import Calculation_curvature
 from postprocess_geojson import Postprocessing
 
-filename = sys.argv[1]
 
-print "prune_geojson_file.py is running..."
-start_time = time.time()
+class Executor_pipeline:
 
-test = Pruning_geojson_file(filename)
-test.load_file()
-test.prune_geojson_file()
-test.save_pruned_geojson()
+    def clean_geojson(self,filename):
+        print "prune_geojson_file.py is running..."
+        start_time = time.time()
 
-print("time: %s secs\n" % (time.time() - start_time))
+        test = Pruning_geojson_file(filename)
+        test.load_file()
+        test.prune_geojson_file()
+        test.save_pruned_geojson()
 
-print "simplify_graph.py is running..."
-start_time = time.time()
+        print("time: %s secs\n" % (time.time() - start_time))
 
-test = Simplifying_graph("data/pruned_file.geojson")
-test.load_file_and_graph()
-test.set_simplify_lanes(False)
-test.set_simplify_curvature(False)
-test.simplify_graph()
-test.prepare_to_saving_optimized()
-test.save_file_to_geojson()
+    def simplify_geojson(self,filename,simplify_lanes=False,simplify_curvature=False):
+        print "simplify_graph.py is running..."
+        start_time = time.time()
 
-print("time: %s secs\n" % (time.time() - start_time))
+        test = Simplifying_graph(filename)
+        test.load_file_and_graph()
+        test.set_simplify_lanes(simplify_lanes)
+        test.set_simplify_curvature(simplify_curvature)
+        test.simplify_graph()
+        test.prepare_to_saving_optimized()
+        test.save_file_to_geojson()
 
-print "data_from_gmaps.py is running..."
-start_time = time.time()
+        print("time: %s secs\n" % (time.time() - start_time))
 
-test = Data_from_gmapsAPI("data/graph_with_simplified_edges.geojson")
-test.check(True)
-test.load_file_and_graph()
-test.get_gmaps_data()
-test.save_file_to_geojson()
+    def get_gmaps_information(self,filename,check_gmaps=True):
+        print "data_from_gmaps.py is running..."
+        start_time = time.time()
 
-print("time: %s secs\n" % (time.time() - start_time))
+        test = Data_from_gmapsAPI(filename)
+        test.set_check_gmaps(check_gmaps)
+        test.load_file_and_graph()
+        test.get_gmaps_data()
+        test.save_file_to_geojson()
 
-print "curvature.py is running..."
-start_time = time.time()
+        print("time: %s secs\n" % (time.time() - start_time))
 
-test = Calculation_curvature("data/result-out.geojson")
-test.load_geojson()
-test.analyse_roads()
-test.save_geojson()
+    def get_curvature_of_edges(self,filename):
+        print "curvature.py is running..."
+        start_time = time.time()
 
-print("time: %s secs\n" % (time.time() - start_time))
+        test = Calculation_curvature(filename)
+        test.load_geojson()
+        test.analyse_roads()
+        test.save_geojson()
 
-print "postprocess_geojson.py is running..."
-start_time = time.time()
+        print("time: %s secs\n" % (time.time() - start_time))
 
-test = Postprocessing("data/curvature-out.geojson")
-test.load_geojson_and_graph()
-test.export_points_to_geojson()
-test.postprocessing_file()
-test.is_geojson_valid()
-test.formated(False)
-test.save_geojson()
+    def postprocessing(self,filename,formated_output=False):
+        print "postprocess_geojson.py is running..."
+        start_time = time.time()
 
-print("time: %s secs" % (time.time() - start_time))
+        test = Postprocessing(filename)
+        test.load_geojson_and_graph()
+        test.export_points_to_geojson()
+        test.postprocessing_file()
+        test.is_geojson_valid()
+        test.formated(formated_output)
+        test.save_geojson()
+
+        print("time: %s secs" % (time.time() - start_time))

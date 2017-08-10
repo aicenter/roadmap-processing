@@ -97,8 +97,9 @@ class Calculation_curvature:
         outfile.close()
 
 #EXAMPLE OF USAGE
-#test = Calculation_curvature("data/graph_with_simplified_edges.geojson")
-#test.load_geojson()
-#test.analyse_roads()
-#test.save_geojson()
+if __name__ == '__main__':
+    test = Calculation_curvature("data/graph_with_simplified_edges.geojson")
+    test.load_geojson()
+    test.analyse_roads()
+    test.save_geojson()
 
