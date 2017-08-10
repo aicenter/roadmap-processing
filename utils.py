@@ -65,10 +65,10 @@ def check_osmfilter(osmfilter_version, is_linux, argv):
         if is_linux:
             osmfilter_downloader("m.m.i24.cc/osmfilter32")
             os.system("chmod +x osmfilter32")
-            check_osmfilter("osmfilter32", is_linux)
+            check_osmfilter("osmfilter32", is_linux,argv)
         else:
             osmfilter_downloader("m.m.i24.cc/osmfilter.exe")
-            check_osmfilter("osmfilter.exe", is_linux)
+            check_osmfilter("osmfilter.exe", is_linux,argv)
 
 
 def configure_and_download_dependecies(argv):

@@ -1,7 +1,6 @@
 import time
 from prune_geojson_file import Pruning_geojson_file
 from simplify_graph import Simplifying_graph
-from data_from_gmaps import Data_from_gmapsAPI
 from curvature import Calculation_curvature
 from postprocess_geojson import Postprocessing
 from speed_from_osm import Speed_from_osm
@@ -41,18 +40,6 @@ def get_speed_from_osm(filename):
     test.load_file_and_graph()
     test.get_speed()
     test.save_geojson()
-
-    print("time: %s secs\n" % (time.time() - start_time))
-
-def get_gmaps_information(filename, check_gmaps=True):
-    print "data_from_gmaps.py is running..."
-    start_time = time.time()
-
-    test = Data_from_gmapsAPI(filename)
-    test.set_check_gmaps(check_gmaps)
-    test.load_file_and_graph()
-    test.get_gmaps_data()
-    test.save_file_to_geojson()
 
     print("time: %s secs\n" % (time.time() - start_time))
 
