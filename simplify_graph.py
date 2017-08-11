@@ -2,7 +2,6 @@ import geojson
 import networkx as nx
 import codecs
 from curvature import Calculation_curvature
-import numpy as np
 from geojson import LineString,Feature
 
 class Simplifying_graph():

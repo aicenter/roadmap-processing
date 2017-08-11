@@ -1,11 +1,9 @@
 from __future__ import print_function
 import sys
-import time
 import os
 import subprocess
 import commands
 import platform
-from os import listdir
 from os.path import join
 
 
@@ -72,8 +70,6 @@ def check_osmfilter(osmfilter_version, is_linux, argv):
 
 
 def configure_and_download_dependecies(argv):
-    install_requirements()
-    
     my_platform = platform.system()  # get system info
 
     if len(argv) == 1:  # at least one param
