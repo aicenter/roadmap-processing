@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 import os
 import subprocess
-import commands
+from osmtogeojson import osmtogeojson_converter
 import platform
 from os.path import join
 
@@ -113,24 +113,25 @@ def configure_and_download_dependecies(argv):
         check_osmfilter("osmfilter.exe", False, argv)
 
     print("converting OSM to geoJSON...")
-    status, version = commands.getstatusoutput("osmtogeojson --version")  # check if osmtogeojson is installed
-    if status == 0:
-        print("version: {}".format(version))
-        os.system("osmtogeojson data/output.osm > data/output.geojson")
-    else:
-        print("trying to install osmtogeojson...")
-        try:  # try install it and run
-            if my_platform == "Linux":
-                subprocess.call(["sudo", "npm", "install", "-g", "osmtogeojson"])
-            elif my_platform == "Windows":
-                subprocess.call(["npm", "install", "-g", "osmtogeojson"])
-            os.system("osmtogeojson data/output.osm > data/output.geojson")
-            print("installation and converting was successful...")
-        except OSError as e:
-            if e.errno == os.errno.ENOENT:
-                err_print("npm not found! please install it first...")
-            else:
-                raise
+    osmtogeojson_converter("data/output.osm")
+    # status, version = commands.getstatusoutput("osmtogeojson --version")  # check if osmtogeojson is installed
+    # if status == 0:
+    #     print("version: {}".format(version))
+    #     os.system("osmtogeojson data/output.osm > data/output.geojson")
+    # else:
+    #     print("trying to install osmtogeojson...")
+    #     try:  # try install it and run
+    #         if my_platform == "Linux":
+    #             subprocess.call(["sudo", "npm", "install", "-g", "osmtogeojson"])
+    #         elif my_platform == "Windows":
+    #             subprocess.call(["npm", "install", "-g", "osmtogeojson"])
+    #         os.system("osmtogeojson data/output.osm > data/output.geojson")
+    #         print("installation and converting was successful...")
+    #     except OSError as e:
+    #         if e.errno == os.errno.ENOENT:
+    #             err_print("npm not found! please install it first...")
+    #         else:
+    #             raise
 
 def remove_temporary_files():
     print("removing temporary files...")
