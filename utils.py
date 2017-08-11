@@ -150,12 +150,3 @@ def remove_pyc_files():
     for item in files:
         if item.endswith(".pyc"):
             os.remove(join(dir, item))
-
-def install_requirements():
-    try:
-        os.system("pip install -r requirements.txt")
-    except OSError as e:
-        if e.errno == os.errno.ENOENT:
-            err_print("pip not found! please install it first...")
-        else:
-            raise

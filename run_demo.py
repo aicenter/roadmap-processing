@@ -1,3 +1,5 @@
+from install_requirements import install_requirements
+install_requirements()
 from python_scripts import postprocessing_geojson,get_curvature_of_edges,simplify_geojson,clean_geojson,get_speed_from_osm
 from utils import configure_and_download_dependecies,remove_temporary_files,remove_pyc_files
 import sys
