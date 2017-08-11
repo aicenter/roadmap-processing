@@ -79,6 +79,9 @@ class Pruning_geojson_file:
                             new_item = self.get_single_pair_of_coords(v, u, temp, id_iterator, False)
                             self.json_dict['features'].append(new_item)
                     else:
+                        if item['properties']['highway']=='motorway' or item['properties']['highway']=='motorway_link' or item['properties']['highway']=='trunk_link' \
+                        or item['properties']['highway']=='primary_link' or ('junction' in item['properties'] and item['properties']['junction']=='roundabout'):
+                            continue
                         id_iterator += 1
                         temp = copy.deepcopy(item)
                         new_item = self.get_single_pair_of_coords(v, u, temp, id_iterator, False)

@@ -43,7 +43,6 @@ class Calculation_curvature:
             point1 = self.get_node(coords[i])
             point2 = self.get_node(coords[i + 1])
             length += self.get_distance_between_coords(point1, point2)
-
         return length
 
     def calculate_curvature(self,coords):
