@@ -16,7 +16,7 @@ def get_coords_of_edge(nodes):
         try:
             loc_coords.append(dict_of_coords[node])
         except:
-            print "this id_node {} is required, but not found in OSM!".format(node)
+            print "this node_id {} is required, but not found in OSM!".format(node)
     return loc_coords
 
 

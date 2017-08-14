@@ -18,7 +18,7 @@ class Speed_from_osm:
         util = Calculation_curvature('not important here')
         for item in self.json_dict['features']:
             if 'maxspeed' not in item['properties']:
-                if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':
+                if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link': #for czechia
                     item['properties']['speed'] = 130
                 else:
                     item['properties']['speed'] = 50

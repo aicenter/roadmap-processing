@@ -24,20 +24,6 @@ def osmfilter_downloader(url_adress):
         else:
             raise  # something else went wrong while trying to run `wget`
 
-
-def map_downloader():
-    # elif sys.argv[1] == '-sample':
-    #     map_downloader()
-    # handle and make method for osmfilter which use first arg as input map
-    try:
-        subprocess.call(["wget", "-O", "map.osm", "http://api.openstreetmap.org/api/0.6/map?bbox=14.4046,50.0691,14.4369,50.0819"])
-    except OSError as e:
-        if e.errno == os.errno.ENOENT:
-            print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error.
-        else:
-            raise  # Something else went wrong while trying to run `wget`
-
-
 # check whether osmfilter exists, else download it
 def check_osmfilter(osmfilter_version, is_linux, argv):
     if os.path.exists(osmfilter_version):
@@ -133,7 +119,7 @@ def remove_temporary_files():
     os.remove("data/deleted_items.geojson")
     os.remove("data/pruned_file.geojson")
     os.remove("data/graph_with_simplified_edges.geojson")
-    os.remove("data/result-out.geojson")
+    os.remove("data/speed-out.geojson")
     os.remove("data/curvature-out.geojson")
 
 def remove_pyc_files():

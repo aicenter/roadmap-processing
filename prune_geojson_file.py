@@ -66,31 +66,44 @@ class Pruning_geojson_file:
             if prop in item['properties'] and not isinstance(item['properties'][prop], self.dict_of_useful_properties[prop]):
                 if self.dict_of_useful_properties[prop] == int:
                     try:
-                        int(item['properties'][prop])
+                        if " mph" in item['properties'][prop]:
+                            temp = item['properties'][prop].split()
+                            item['properties'][prop] = float(temp[0]) * 1.609344
+                        elif " knots" in item['properties'][prop]:
+                            temp = item['properties'][prop].split()
+                            item['properties'][prop] = float(temp[0]) * 1.85200
+                        else:
+                            int(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be integer\n".format(item['properties'][prop])
+                        self.warnings += "\"{}\" should be integer in {}\n".format(item['properties'][prop],prop)
                         del item['properties'][prop]
                 elif self.dict_of_useful_properties[prop] == str:
                     try:
                         str(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be string\n".format(item['properties'][prop])
+                        self.warnings += "\"{}\" should be string in {}\n".format(item['properties'][prop],prop)
                         del item['properties'][prop]
                 elif self.dict_of_useful_properties[prop] == long:
                     try:
                         long(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be long\n".format(item['properties'][prop])
+                        self.warnings += "\"{}\" should be long in {}\n".format(item['properties'][prop],prop)
                         del item['properties'][prop]
                 elif self.dict_of_useful_properties[prop] == float:
                     try:
-                        if " km" or " mi" or " m" in item['properties'][prop]:
+                        if " m" in item['properties'][prop]:
                             temp = item['properties'][prop].split()
-                            item['properties'][prop] = temp[0]
+                            item['properties'][prop] = float(temp[0])
+                        elif " km" in item['properties'][prop]:
+                            temp = item['properties'][prop].split()
+                            item['properties'][prop] = float(temp[0]) * 1000
+                        elif " mi" in item['properties'][prop]:
+                            temp = item['properties'][prop].split()
+                            item['properties'][prop] = float(temp[0]) * 1609.344
                         else:
                             float(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be float\n".format(item['properties'][prop])
+                        self.warnings += "\"{}\" should be float in {}\n".format(item['properties'][prop],prop)
                         del item['properties'][prop]
 
 
