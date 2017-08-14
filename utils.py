@@ -119,7 +119,7 @@ def remove_temporary_files():
     os.remove("data/deleted_items.geojson")
     os.remove("data/pruned_file.geojson")
     os.remove("data/graph_with_simplified_edges.geojson")
-    os.remove("data/speed-out.geojson")
+    os.remove("data/speeds-out.geojson")
     os.remove("data/curvature-out.geojson")
 
 def remove_pyc_files():
