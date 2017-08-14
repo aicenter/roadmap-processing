@@ -13,7 +13,10 @@ def get_all_coordinates(filename):
 def get_coords_of_edge(nodes):
     loc_coords = []
     for node in nodes:
-        loc_coords.append(dict_of_coords[node])
+        try:
+            loc_coords.append(dict_of_coords[node])
+        except:
+            print "this id_node {} is required, but not found in OSM!".format(node)
     return loc_coords
 
 
@@ -26,20 +29,13 @@ def osmtogeojson_converter(filename):
 
     for item in parse_file(filename):  # generator!!
         if isinstance(item,Node) and item.tags!={}:
-            #print item
             point = Point(dict_of_coords[item.id])
-            #print point
             feature = Feature(geometry=point,id=item.id,properties=item.tags)
-           # print feature
             feature_collection.append(feature)
-        elif isinstance(item,Way):
-            #print item
+        elif isinstance(item,Way) and 'highway' in item.tags:
             coords = get_coords_of_edge(item.nodes)
-            #print coords
             line_string = LineString(coords)
-            #print line_string
             feature = Feature(geometry=line_string,id=item.id,properties=item.tags)
-            #print feature
             feature_collection.append(feature)
 
     geojson_file = FeatureCollection(feature_collection)
@@ -54,4 +50,6 @@ def osmtogeojson_converter(filename):
     print "time: {}".format(time.time()-start_time)
 
 if __name__ == '__main__':
-    osmtogeojson_converter("data/output.osm")
+    import sys
+    osmtogeojson_converter(sys.argv[1])
+    #osmtogeojson_converter("data/output.osm")

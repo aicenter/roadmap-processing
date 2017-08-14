@@ -1,14 +1,23 @@
 #dont send my Google Maps API key
 KEY_PROVIDER.py
+
 #temporary python files
 *.pyc
+
 #maps
 *.osm
+
 #osmfilter
 osmfilter32
+
 #google maps
 data_from_gmaps.py
+
 #project
 .idea
+
 #data
 data/
+
+#bz2 files
+*.bz2

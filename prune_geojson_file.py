@@ -4,7 +4,9 @@ import copy
 
 
 class Pruning_geojson_file:
+
     set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel', 'traffic_calming', 'lanes:forward', 'lanes:backward'}
+    dict_of_useful_properties = {'highway': str, 'id': long, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str, 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int, 'lanes:backward': int}
 
     def __init__(self, filename):
         self.filename = filename
@@ -43,9 +45,9 @@ class Pruning_geojson_file:
         new_item['geometry']['coordinates'] = [coord_u, coord_v]
         if ('oneway' in new_item['properties'] and new_item['properties']['oneway'] != 'yes') or ('oneway' not in new_item['properties']):
             if 'lanes:forward' in new_item['properties'] and is_forward:
-                new_item['properties']['lanes'] = new_item['properties']['lanes:forward']
+                new_item['properties']['lanes'] = int(new_item['properties']['lanes:forward'])
             elif 'lanes:backward' in new_item['properties'] and not is_forward:
-                new_item['properties']['lanes'] = new_item['properties']['lanes:backward']
+                new_item['properties']['lanes'] = int(new_item['properties']['lanes:backward'])
             elif is_forward and 'lanes' in new_item['properties']:
                 new_item['properties']['lanes'] = int(new_item['properties']['lanes']) - 1
             elif not is_forward and 'lanes' in new_item['properties']:
@@ -57,6 +59,41 @@ class Pruning_geojson_file:
         new_item['properties']['oneway'] = 'yes'
         return new_item
 
+    warnings = ""
+
+    def check_types(self,item):
+        for prop in self.dict_of_useful_properties:
+            if prop in item['properties'] and not isinstance(item['properties'][prop], self.dict_of_useful_properties[prop]):
+                if self.dict_of_useful_properties[prop] == int:
+                    try:
+                        int(item['properties'][prop])
+                    except:
+                        self.warnings += "\"{}\" should be integer\n".format(item['properties'][prop])
+                        del item['properties'][prop]
+                elif self.dict_of_useful_properties[prop] == str:
+                    try:
+                        str(item['properties'][prop])
+                    except:
+                        self.warnings += "\"{}\" should be string\n".format(item['properties'][prop])
+                        del item['properties'][prop]
+                elif self.dict_of_useful_properties[prop] == long:
+                    try:
+                        long(item['properties'][prop])
+                    except:
+                        self.warnings += "\"{}\" should be long\n".format(item['properties'][prop])
+                        del item['properties'][prop]
+                elif self.dict_of_useful_properties[prop] == float:
+                    try:
+                        if " km" or " mi" or " m" in item['properties'][prop]:
+                            temp = item['properties'][prop].split()
+                            item['properties'][prop] = temp[0]
+                        else:
+                            float(item['properties'][prop])
+                    except:
+                        self.warnings += "\"{}\" should be float\n".format(item['properties'][prop])
+                        del item['properties'][prop]
+
+
     def prune_geojson_file(self):
         print "processing..."
         id_iterator = 0
@@ -66,6 +103,7 @@ class Pruning_geojson_file:
             item = self.json_dict['features'][i]
             if item['geometry']['type'] == 'LineString':
                 item = self.remove_properties(item)
+                self.check_types(item)
                 for i in range(0, len(item['geometry']['coordinates']) - 1):
                     temp = copy.deepcopy(item)
                     u = item['geometry']['coordinates'][i]
@@ -79,8 +117,8 @@ class Pruning_geojson_file:
                             new_item = self.get_single_pair_of_coords(v, u, temp, id_iterator, False)
                             self.json_dict['features'].append(new_item)
                     else:
-                        if item['properties']['highway']=='motorway' or item['properties']['highway']=='motorway_link' or item['properties']['highway']=='trunk_link' \
-                        or item['properties']['highway']=='primary_link' or ('junction' in item['properties'] and item['properties']['junction']=='roundabout'):
+                        if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link' or item['properties']['highway'] == 'trunk_link' \
+                                or item['properties']['highway'] == 'primary_link' or ('junction' in item['properties'] and item['properties']['junction'] == 'roundabout'):
                             continue
                         id_iterator += 1
                         temp = copy.deepcopy(item)
@@ -97,6 +135,10 @@ class Pruning_geojson_file:
         with codecs.open("data/pruned_file.geojson", 'w') as out:
             geojson.dump(self.json_dict, out)
         out.close()
+        if self.warnings!="":
+            with codecs.open("data/warnings.txt", 'w') as out:
+                out.write(self.warnings)
+            out.close()
 
 
 # EXAMPLE OF USAGE

@@ -1,3 +1,4 @@
 networkx==1.11
 osmread==0.2
+bz2file==0.98
 geojson==1.3.5

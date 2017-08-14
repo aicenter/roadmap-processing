@@ -1,16 +1,9 @@
 from __future__ import print_function
-import sys
 import os
 import subprocess
 from osmtogeojson import osmtogeojson_converter
 import platform
 from os.path import join
-
-
-# util for print on STDERR
-def err_print(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
-
 
 # parser of configuration file
 def get_all_params_osmfilter(file):
@@ -27,7 +20,7 @@ def osmfilter_downloader(url_adress):
         subprocess.call(["wget", url_adress])
     except OSError as e:
         if e.errno == os.errno.ENOENT:
-            err_print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error.
+            print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error.
         else:
             raise  # something else went wrong while trying to run `wget`
 
@@ -40,7 +33,7 @@ def map_downloader():
         subprocess.call(["wget", "-O", "map.osm", "http://api.openstreetmap.org/api/0.6/map?bbox=14.4046,50.0691,14.4369,50.0819"])
     except OSError as e:
         if e.errno == os.errno.ENOENT:
-            err_print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error.
+            print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error.
         else:
             raise  # Something else went wrong while trying to run `wget`
 
@@ -73,7 +66,7 @@ def configure_and_download_dependecies(argv):
     my_platform = platform.system()  # get system info
 
     if len(argv) == 1:  # at least one param
-        err_print("too few arguments!")
+        print("too few arguments!")
         exit(1)
 
     if argv[1] == '-help':  # get help
@@ -89,7 +82,7 @@ def configure_and_download_dependecies(argv):
         exit(0)
     else:  # check if path to map is correct
         if not os.path.exists(argv[1]):
-            err_print("{} doesn't exist!".format(argv[1]))
+            print("{} doesn't exist!".format(argv[1]))
             exit(1)
 
     if not os.path.isdir("data"):  # make directory data if and only if doesn't exist
@@ -129,7 +122,7 @@ def configure_and_download_dependecies(argv):
     #         print("installation and converting was successful...")
     #     except OSError as e:
     #         if e.errno == os.errno.ENOENT:
-    #             err_print("npm not found! please install it first...")
+    #             print("npm not found! please install it first...")
     #         else:
     #             raise
 
