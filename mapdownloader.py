@@ -1,4 +1,10 @@
 from __future__ import print_function
+from install_requirements import is_dependencies_satisfied
+import sys
+
+if not is_dependencies_satisfied():
+    print("some packages are missing, please type: \"python install_requirements.py\"", file=sys.stderr)
+    exit(1)
 from utils import err_print
 import requests
 import re
@@ -6,7 +12,6 @@ import subprocess
 import os
 import bz2file
 import time
-import sys
 
 
 def map_downloader(url):
@@ -61,4 +66,4 @@ for line in list_of_content:
                     print("time:", (time.time() - start_time))
                     exit()
 
-print("spell your city correctly, or choose another one from this list: {}".format(all_cities))
+err_print("spell your city correctly, or choose another one from this list: {}".format(sorted(all_cities)))

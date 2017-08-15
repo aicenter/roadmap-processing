@@ -67,7 +67,7 @@ class Pruning_geojson_file:
         return new_item
 
     def write_to_log(self, value, property, type, id):
-        self.logger.warning('%s should be %s in %s, id_edge: %d', str(value), type, property, id)
+        self.logger.warning('\"%s\" should be %s in %s, id_edge: %d', str(value), type, property, id)
 
     def check_types(self, item):
         for prop in self.dict_of_useful_properties:
