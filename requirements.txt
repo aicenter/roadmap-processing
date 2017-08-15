@@ -1,4 +1,6 @@
-networkx==1.11
+requests==2.14.2
+googlemaps==2.5.1
+geojson==1.3.5
 osmread==0.2
 bz2file==0.98
-geojson==1.3.5
+networkx==1.11

@@ -1,18 +1,18 @@
-from __future__ import division
+from __future__ import division, print_function
 import math
 import geojson
 import codecs
 
-class Calculation_curvature:
 
-    def __init__(self,filename):
+class Calculation_curvature:
+    def __init__(self, filename):
         self.filename = filename
         self.json_curvature = {}
 
-    def get_node(self,node):  # latlon
+    def get_node(self, node):  # latlon
         return (node[1], node[0])
 
-    def get_distance_between_coords(self,point1, point2):  # return in meters
+    def get_distance_between_coords(self, point1, point2):  # return in meters
         R = 6371000
         lat1 = math.radians(point1[0])
         lat2 = math.radians(point2[0])
@@ -29,7 +29,7 @@ class Calculation_curvature:
     #     /    \
     #     ------
     #       b
-    def calculate_angle_in_degree(self,a, b, c):
+    def calculate_angle_in_degree(self, a, b, c):
         if a + c > b:  # check if it is a triangle
             angle = math.acos((a ** 2 + c ** 2 - b ** 2) / (2 * a * c))  # in radians
         else:
@@ -37,7 +37,7 @@ class Calculation_curvature:
         result = abs(180 - math.degrees(angle))
         return result
 
-    def get_length(self,coords):
+    def get_length(self, coords):
         length = 0
         for i in range(0, len(coords) - 1):
             point1 = self.get_node(coords[i])
@@ -45,7 +45,7 @@ class Calculation_curvature:
             length += self.get_distance_between_coords(point1, point2)
         return length
 
-    def calculate_curvature(self,coords):
+    def calculate_curvature(self, coords):
         if len(coords) < 3:
             return [0, 0]  # no curvature on edge
         else:
@@ -72,33 +72,32 @@ class Calculation_curvature:
                 total_curvature += angle
                 length_of_edge += distance
 
-            #length_of_edge = self.get_length(coords)
+            # length_of_edge = self.get_length(coords)
             return [total_curvature / length_of_edge, max_curvature]
 
-
     def load_geojson(self):
-        print "loading file..."
+        print("loading file...")
         with codecs.open(self.filename, encoding='utf8') as f:
             self.json_curvature = geojson.load(f)
         f.close()
 
     def analyse_roads(self):
-        print "processing..."
+        print("processing...")
         for item in self.json_curvature['features']:
             cur = self.calculate_curvature(item['geometry']['coordinates'])
             item['properties']['curvature'] = cur[0]
             item['properties']['max_curvature'] = cur[1]
 
     def save_geojson(self):
-        print "saving file..."
+        print("saving file...")
         with open('data/curvature-out.geojson', 'w') as outfile:
             geojson.dump(self.json_curvature, outfile)
         outfile.close()
 
-#EXAMPLE OF USAGE
+
+# EXAMPLE OF USAGE
 if __name__ == '__main__':
     test = Calculation_curvature("data/graph_with_simplified_edges.geojson")
     test.load_geojson()
     test.analyse_roads()
     test.save_geojson()
-

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import geojson
 import codecs
 from geojson import Point,Feature,FeatureCollection
@@ -18,7 +19,7 @@ class Postprocessing:
         self.is_formated = check
 
     def load_geojson_and_graph(self):
-        print "loading file..."
+        print("loading file...")
         with codecs.open(self.filename, encoding='utf8') as f:
             self.json_dict = geojson.load(f)
         f.close()
@@ -31,10 +32,10 @@ class Postprocessing:
 
     def is_geojson_valid(self):
         validation = geojson.is_valid(self.json_dict)
-        print "is geoJSON valid?", validation['valid']
+        print("is geoJSON valid?", validation['valid'])
 
     def export_points_to_geojson(self):
-        print "exporting points..."
+        print("exporting points...")
         list_of_features = []
         for n, _ in self.g.adjacency_iter():
             node_id = self.get_nodeID(str(n))
@@ -55,7 +56,7 @@ class Postprocessing:
         return node_id #int(node_id)
 
     def postprocessing_file(self):
-        print "processing..."
+        print("processing...")
         for item in self.json_dict['features']:
             #item['properties']['length'] = item['properties']['distance_best_guess']
             #item['properties']['speed'] = item['properties']['speed_best_guess']
@@ -73,7 +74,7 @@ class Postprocessing:
             item['properties']['to_id'] = to_nodeID
 
     def save_geojson(self):
-        print "saving file..."
+        print("saving file...")
         with open('data/output-final-result.geojson', 'w') as outfile:
             if self.is_formated==False:
                 geojson.dump(self.json_dict, outfile)

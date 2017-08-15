@@ -1,14 +1,18 @@
-from osmread import parse_file,Node,Way
+from __future__ import print_function
+from osmread import parse_file, Node, Way
 import geojson
-from geojson import Point,LineString,Feature,FeatureCollection
+from geojson import Point, LineString, Feature, FeatureCollection
 import time
+from utils import err_print
 
 dict_of_coords = {}
+
 
 def get_all_coordinates(filename):
     for item in parse_file(filename):  # generator!!
         if isinstance(item, Node):
-            dict_of_coords[item.id]=(item.lon,item.lat)
+            dict_of_coords[item.id] = (item.lon, item.lat)
+
 
 def get_coords_of_edge(nodes):
     loc_coords = []
@@ -16,7 +20,7 @@ def get_coords_of_edge(nodes):
         try:
             loc_coords.append(dict_of_coords[node])
         except:
-            print "this node_id {} is required, but not found in OSM!".format(node)
+            err_print("this node_id {} is required, but not found in OSM!".format(node))
     return loc_coords
 
 
@@ -28,14 +32,14 @@ def osmtogeojson_converter(filename):
     feature_collection = []
 
     for item in parse_file(filename):  # generator!!
-        if isinstance(item,Node) and item.tags!={}:
+        if isinstance(item, Node) and item.tags != {}:
             point = Point(dict_of_coords[item.id])
-            feature = Feature(geometry=point,id=item.id,properties=item.tags)
+            feature = Feature(geometry=point, id=item.id, properties=item.tags)
             feature_collection.append(feature)
-        elif isinstance(item,Way) and 'highway' in item.tags:
+        elif isinstance(item, Way) and 'highway' in item.tags:
             coords = get_coords_of_edge(item.nodes)
             line_string = LineString(coords)
-            feature = Feature(geometry=line_string,id=item.id,properties=item.tags)
+            feature = Feature(geometry=line_string, id=item.id, properties=item.tags)
             feature_collection.append(feature)
 
     geojson_file = FeatureCollection(feature_collection)
@@ -45,11 +49,13 @@ def osmtogeojson_converter(filename):
     outfile.close()
 
     validation = geojson.is_valid(geojson_file)
-    print "is geoJSON valid?",validation['valid']
+    print("is geoJSON valid?", validation['valid'])
 
-    print "time: {}".format(time.time()-start_time)
+    print("time: {}".format(time.time() - start_time))
+
 
 if __name__ == '__main__':
     import sys
+
     osmtogeojson_converter(sys.argv[1])
-    #osmtogeojson_converter("data/output.osm")
+    # osmtogeojson_converter("data/output.osm")

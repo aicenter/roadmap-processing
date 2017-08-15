@@ -1,14 +1,21 @@
+from __future__ import print_function
 import geojson
 import codecs
 import copy
+import logging
 
 
 class Pruning_geojson_file:
-
     set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel', 'traffic_calming', 'lanes:forward', 'lanes:backward'}
     dict_of_useful_properties = {'highway': str, 'id': long, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str, 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int, 'lanes:backward': int}
 
     def __init__(self, filename):
+        self.logger = logging.getLogger('OSM_errors')
+        hdlr = logging.FileHandler('data/log.log')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr)
+        self.logger.setLevel(logging.WARNING)  # warnings and worse
         self.filename = filename
 
     def remove_properties(self, item):
@@ -19,7 +26,7 @@ class Pruning_geojson_file:
         return item
 
     def load_file(self):
-        print "loading file..."
+        print("loading file...")
         with codecs.open(self.filename, encoding='utf8') as f:
             self.json_dict = geojson.load(f)
         f.close()
@@ -59,9 +66,10 @@ class Pruning_geojson_file:
         new_item['properties']['oneway'] = 'yes'
         return new_item
 
-    warnings = ""
+    def write_to_log(self, value, property, type, id):
+        self.logger.warning('\"%f\" should be %s in %s, id_edge: %d', value, type, property, id)
 
-    def check_types(self,item):
+    def check_types(self, item):
         for prop in self.dict_of_useful_properties:
             if prop in item['properties'] and not isinstance(item['properties'][prop], self.dict_of_useful_properties[prop]):
                 if self.dict_of_useful_properties[prop] == int:
@@ -75,19 +83,22 @@ class Pruning_geojson_file:
                         else:
                             int(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be integer in {}\n".format(item['properties'][prop],prop)
+                        # self.warnings += "\"{}\" should be integer in {}\n".format(item['properties'][prop],prop)
+                        self.write_to_log(item['properties'][prop], prop, "integer", item['id'])
                         del item['properties'][prop]
                 elif self.dict_of_useful_properties[prop] == str:
                     try:
                         str(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be string in {}\n".format(item['properties'][prop],prop)
+                        # self.warnings += "\"{}\" should be string in {}\n".format(item['properties'][prop],prop)
+                        self.write_to_log(item['properties'][prop], prop, "string", item['id'])
                         del item['properties'][prop]
                 elif self.dict_of_useful_properties[prop] == long:
                     try:
                         long(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be long in {}\n".format(item['properties'][prop],prop)
+                        # self.warnings += "\"{}\" should be long in {}\n".format(item['properties'][prop],prop)
+                        self.write_to_log(item['properties'][prop], prop, "long", item['id'])
                         del item['properties'][prop]
                 elif self.dict_of_useful_properties[prop] == float:
                     try:
@@ -103,12 +114,12 @@ class Pruning_geojson_file:
                         else:
                             float(item['properties'][prop])
                     except:
-                        self.warnings += "\"{}\" should be float in {}\n".format(item['properties'][prop],prop)
+                        # self.warnings += "\"{}\" should be float in {}\n".format(item['properties'][prop],prop)
+                        self.write_to_log(item['properties'][prop], prop, "float", item['id'])
                         del item['properties'][prop]
 
-
     def prune_geojson_file(self):
-        print "processing..."
+        print("processing...")
         id_iterator = 0
         length = len(self.json_dict['features'])
 
@@ -143,15 +154,11 @@ class Pruning_geojson_file:
             item.clear()
 
     def save_pruned_geojson(self):
-        print "saving file..."
+        print("saving file...")
         self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
         with codecs.open("data/pruned_file.geojson", 'w') as out:
             geojson.dump(self.json_dict, out)
         out.close()
-        if self.warnings!="":
-            with codecs.open("data/warnings.txt", 'w') as out:
-                out.write(self.warnings)
-            out.close()
 
 
 # EXAMPLE OF USAGE

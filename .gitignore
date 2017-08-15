@@ -8,7 +8,7 @@ KEY_PROVIDER.py
 *.osm
 
 #osmfilter
-osmfilter32
+osmfilter
 
 #google maps
 data_from_gmaps.py

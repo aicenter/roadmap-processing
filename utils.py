@@ -4,6 +4,13 @@ import subprocess
 from osmtogeojson import osmtogeojson_converter
 import platform
 from os.path import join
+import sys
+
+
+# print to STDERR
+def err_print(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 
 # parser of configuration file
 def get_all_params_osmfilter(file):
@@ -20,9 +27,10 @@ def osmfilter_downloader(url_adress):
         subprocess.call(["wget", url_adress])
     except OSError as e:
         if e.errno == os.errno.ENOENT:
-            print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error.
+            err_print("wget not found!\nplease, install it, it's available both Linux and Windows")  # handle file not found error
         else:
             raise  # something else went wrong while trying to run `wget`
+
 
 # check whether osmfilter exists, else download it
 def check_osmfilter(osmfilter_version, is_linux, argv):
@@ -30,9 +38,8 @@ def check_osmfilter(osmfilter_version, is_linux, argv):
         with open("config", mode='r') as f:
             args = get_all_params_osmfilter(f)
         f.close()
-        # run OSMFILTER
         if is_linux:
-            command = "./osmfilter32 {} {} > data/output.osm".format(argv[1], args)
+            command = "./osmfilter {} {} > data/output.osm".format(argv[1], args)
         else:
             command = "osmfilter.exe {} {} > data/output.osm".format(argv[1], args)
         # print(command) #check what is executed
@@ -40,19 +47,18 @@ def check_osmfilter(osmfilter_version, is_linux, argv):
     else:
         print("downloading osmfilter...")
         if is_linux:
-            osmfilter_downloader("m.m.i24.cc/osmfilter32")
-            os.system("chmod +x osmfilter32")
-            check_osmfilter("osmfilter32", is_linux,argv)
+            os.system("wget -O - http://m.m.i24.cc/osmfilter.c |cc -x c - -O3 -o osmfilter")
+            check_osmfilter("osmfilter", is_linux, argv)
         else:
             osmfilter_downloader("m.m.i24.cc/osmfilter.exe")
-            check_osmfilter("osmfilter.exe", is_linux,argv)
+            check_osmfilter("osmfilter.exe", is_linux, argv)
 
 
 def configure_and_download_dependecies(argv):
     my_platform = platform.system()  # get system info
 
     if len(argv) == 1:  # at least one param
-        print("too few arguments!")
+        err_print("too few arguments!")
         exit(1)
 
     if argv[1] == '-help':  # get help
@@ -64,11 +70,11 @@ def configure_and_download_dependecies(argv):
         print("-r (optional)   remove all temporary files")
         exit(0)
     elif argv[1] == '-version':  # get version
-        print("version: 0.0.1")
+        print("version: 0.1.0")
         exit(0)
     else:  # check if path to map is correct
         if not os.path.exists(argv[1]):
-            print("{} doesn't exist!".format(argv[1]))
+            err_print("{} doesn't exist!".format(argv[1]))
             exit(1)
 
     if not os.path.isdir("data"):  # make directory data if and only if doesn't exist
@@ -82,35 +88,18 @@ def configure_and_download_dependecies(argv):
             os.remove("data/temp_data.gpickle")
             print("data from previous graph was deleted...")
 
-    if os.path.exists("data/data_from_gmaps.log"):  # remove log file with Google Maps errors
-        os.remove("data/data_from_gmaps.log")
+    if os.path.exists("data/log.log"):  # remove log file with Google Maps errors
+        os.remove("data/log.log")
 
     print("cleaning OSM data...")
     if my_platform == "Linux":  # check if osmfilter is downloaded
-        check_osmfilter("osmfilter32", True, argv)
+        check_osmfilter("osmfilter", True, argv)
     elif my_platform == "Windows":
         check_osmfilter("osmfilter.exe", False, argv)
 
     print("converting OSM to geoJSON...")
     osmtogeojson_converter("data/output.osm")
-    # status, version = commands.getstatusoutput("osmtogeojson --version")  # check if osmtogeojson is installed
-    # if status == 0:
-    #     print("version: {}".format(version))
-    #     os.system("osmtogeojson data/output.osm > data/output.geojson")
-    # else:
-    #     print("trying to install osmtogeojson...")
-    #     try:  # try install it and run
-    #         if my_platform == "Linux":
-    #             subprocess.call(["sudo", "npm", "install", "-g", "osmtogeojson"])
-    #         elif my_platform == "Windows":
-    #             subprocess.call(["npm", "install", "-g", "osmtogeojson"])
-    #         os.system("osmtogeojson data/output.osm > data/output.geojson")
-    #         print("installation and converting was successful...")
-    #     except OSError as e:
-    #         if e.errno == os.errno.ENOENT:
-    #             print("npm not found! please install it first...")
-    #         else:
-    #             raise
+
 
 def remove_temporary_files():
     print("removing temporary files...")
@@ -121,6 +110,7 @@ def remove_temporary_files():
     os.remove("data/graph_with_simplified_edges.geojson")
     os.remove("data/speeds-out.geojson")
     os.remove("data/curvature-out.geojson")
+
 
 def remove_pyc_files():
     dir = os.path.dirname(os.path.abspath(__file__))  # remove temporary python files
