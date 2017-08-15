@@ -1,18 +1,17 @@
 from __future__ import print_function
-from install_requirements import is_dependencies_satisfied, run_virtualenvironment
+from install_requirements import is_dependencies_satisfied
 import sys
-import os
 
-run_virtualenvironment(os.path.realpath(__file__))
 if not is_dependencies_satisfied():
     print("some packages are missing, please type: \"python install_requirements.py\"", file=sys.stderr)
     exit(1)
 from utils import err_print
 import requests
 import re
-import subprocess
+import os
 import bz2file
 import time
+import subprocess
 
 
 def map_downloader(url):

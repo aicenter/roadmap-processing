@@ -30,20 +30,21 @@ def install_requirements():
             raise
 
 
-def find_virtualenv(name):
-    home = os.path.expanduser("~")
-    for root, dirs, files in os.walk(home):
-        if name in files:
-            return os.path.join(root, name)
-
-
-def run_virtualenvironment(file):
-    activate_this = find_virtualenv("activate_this.py")
-    if activate_this != None:  # virtualenv exists
-        execfile(activate_this, dict(file=activate_this))
+# def find_virtualenv(name):
+#     home = os.path.expanduser("~")
+#     for root, dirs, files in os.walk(home):
+#         if name in files:
+#             return os.path.join(root, name)
+#
+#
+def run_virtualenvironment():
+    pass
+    # activate_this = find_virtualenv("activate_this.py")
+    # if activate_this != None:  # virtualenv exists
+    #     execfile(activate_this, dict(__file__=activate_this))
 
 
 if __name__ == '__main__':
-    run_virtualenvironment(__file__)
+    run_virtualenvironment()
     if not is_dependencies_satisfied():
         install_requirements()
