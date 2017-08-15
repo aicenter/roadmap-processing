@@ -131,7 +131,7 @@ class Simplifying_graph():
         coords = filter(None, self.g.in_edges(n, data=True)[0][2]['others'] + [[n[1], n[0]]] + self.g.out_edges(n, data=True)[0][2]['others'])
         lanes_u = self.g.out_edges(n, data=True)[0][2]['lanes']
         lanes_v = self.g.in_edges(n, data=True)[0][2]['lanes']
-        if edge_u != edge_v or (self.g.in_edges(n, data=True)[0][2]['others']!=self.g.out_edges(n, data=True)[0][2]['others']):
+        if edge_u != edge_v:
             # remove edges and node
             if lanes_u == lanes_v or lanes_u == None or lanes_v == None or self.check_lanes:  # merge only edges with same number of lanes
                 self.g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
