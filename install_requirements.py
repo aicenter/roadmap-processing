@@ -37,13 +37,13 @@ def find_virtualenv(name):
             return os.path.join(root, name)
 
 
-def run_virtualenvironment():
+def run_virtualenvironment(file):
     activate_this = find_virtualenv("activate_this.py")
     if activate_this != None:  # virtualenv exists
-        execfile(activate_this, dict(__file__=activate_this))
+        execfile(activate_this, dict(file=activate_this))
 
 
 if __name__ == '__main__':
-    run_virtualenvironment()
+    run_virtualenvironment(__file__)
     if not is_dependencies_satisfied():
         install_requirements()
