@@ -29,16 +29,19 @@ def install_requirements():
         else:
             raise
 
+
+def find_virtualenv(name):
+    home = os.path.expanduser("~")
+    for root, dirs, files in os.walk(home):
+        if name in files:
+            return os.path.join(root, name)
+
+
 def run_virtualenvironment():
-    my_platform = platform.system()  # get system info
-    try:
-        if my_platform == "Linux":
-            os.system("virtualenv --no-site-packages --distribute .env && source .env/bin/activate")  # only for linux
-    except OSError as e:
-        if e.errno == os.errno.ENOENT:
-            print("virtualenv not found! please install it first...")
-        else:
-            raise
+    activate_this = find_virtualenv("activate_this.py")
+    if activate_this != None:  # virtualenv exists
+        execfile(activate_this, dict(__file__=activate_this))
+
 
 if __name__ == '__main__':
     run_virtualenvironment()
