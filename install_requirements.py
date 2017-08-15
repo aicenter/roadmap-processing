@@ -20,7 +20,7 @@ def install_requirements():
     my_platform = platform.system()  # get system info
     try:
         if my_platform == "Linux":
-            os.system("sudo -H pip install -r requirements.txt")  # only for linux
+            os.system("pip install -r requirements.txt")  # only for linux
         elif my_platform == "Windows":
             os.system("pip install -r requirements.txt")
     except OSError as e:
