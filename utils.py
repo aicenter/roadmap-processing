@@ -63,13 +63,13 @@ def configure_and_download_dependecies(argv):
     if argv[1] == '-help':  # get help
         print("usage of script..")
         print("parameters:")
-        print("-help        information about functionality of script and possible parameters")
-        print("-version     version of script")
-        print("1.param (compulsury)     OSM input file")
-        print("-r (optional)   remove all temporary files")
+        print("-help                    information about functionality of script and possible parameters")
+        print("-version                 version of script")
+        print("1.param (compulsory)     OSM input file")
+        print("-r (optional)            remove all temporary files")
         exit(0)
     elif argv[1] == '-version':  # get version
-        print("version: 0.1.0")
+        print("version: 0.1.2")
         exit(0)
     else:  # check if path to map is correct
         if not os.path.exists(argv[1]):

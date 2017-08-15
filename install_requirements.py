@@ -29,7 +29,18 @@ def install_requirements():
         else:
             raise
 
+def run_virtualenvironment():
+    my_platform = platform.system()  # get system info
+    try:
+        if my_platform == "Linux":
+            os.system("virtualenv --no-site-packages --distribute .env && source .env/bin/activate")  # only for linux
+    except OSError as e:
+        if e.errno == os.errno.ENOENT:
+            print("virtualenv not found! please install it first...")
+        else:
+            raise
 
 if __name__ == '__main__':
+    run_virtualenvironment()
     if not is_dependencies_satisfied():
         install_requirements()

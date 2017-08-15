@@ -21,3 +21,6 @@ data/
 
 #bz2 files
 *.bz2
+
+#bash scripts
+*.sh
