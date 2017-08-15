@@ -3,7 +3,7 @@ from install_requirements import is_dependencies_satisfied
 import sys
 
 if not is_dependencies_satisfied():
-    print("some packages are missing, please type \"python install_requirements.py\"", file=sys.stderr)
+    print("some packages are missing, please type: \"python install_requirements.py\"", file=sys.stderr)
     exit(1)
 from python_scripts import postprocessing_geojson, get_curvature_of_edges, simplify_geojson, clean_geojson, get_speed_from_osm
 from utils import configure_and_download_dependecies, remove_temporary_files, remove_pyc_files

@@ -98,7 +98,7 @@ def configure_and_download_dependecies(argv):
 
     print("converting OSM to geoJSON...")
 
-    from osmtogeojson import osmtogeojson_converter #avoid circular dependent import
+    from osmtogeojson import osmtogeojson_converter  # avoid circular dependent import
     osmtogeojson_converter("data/output.osm")
 
 
