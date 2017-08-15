@@ -1,4 +1,5 @@
-import urllib2
+#import urllib2
+import requests
 import re
 import subprocess
 import os
@@ -24,9 +25,10 @@ def substring_after(s, delim):
 URL_BASE = 'https://mapzen.com'
 url = URL_BASE + '/data/metro-extracts/'
 
-responce = urllib2.urlopen(url)
+#responce = urllib2.urlopen(url)
+responce = requests.get(url)
 
-list_of_content = responce.readlines()
+list_of_content = [line for line in responce.iter_lines()]#responce.readlines()
 
 if len(sys.argv) > 1:
     my_city = sys.argv[1]
@@ -42,8 +44,10 @@ for line in list_of_content:
             city_url = substring_after(line[1], "href=")
             url = URL_BASE + city_url.replace("\"", "")
 
-            responce = urllib2.urlopen(url)
-            for line in responce.readlines():
+            # responce = urllib2.urlopen(url)
+            responce = requests.get(url)
+            list_of_content = [line for line in responce.iter_lines()]
+            for line in list_of_content:#responce.readlines():
                 if "OSM XML" in line:
                     line = re.split(" |<|>", line)  # cut string into list
                     print "size:", line[-5]  # size in MB
@@ -58,4 +62,4 @@ for line in list_of_content:
                     print "time:", (time.time() - start_time)
                     exit()
 
-print "spell your city correctly, or choose another from this list: {}".format(all_cities)
+print "spell your city correctly, or choose another one from this list: {}".format(all_cities)
