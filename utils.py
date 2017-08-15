@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import subprocess
-from osmtogeojson import osmtogeojson_converter
 import platform
 from os.path import join
 import sys
@@ -98,6 +97,8 @@ def configure_and_download_dependecies(argv):
         check_osmfilter("osmfilter.exe", False, argv)
 
     print("converting OSM to geoJSON...")
+
+    from osmtogeojson import osmtogeojson_converter #avoid circular dependent import
     osmtogeojson_converter("data/output.osm")
 
 
