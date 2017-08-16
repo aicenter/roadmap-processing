@@ -24,15 +24,55 @@ for installing pip and
 sudo pip install virtualenv
 ```
 
-for virtualenv.
+for virtualenv or
 
-If you are running in Linux, type 
+
+```
+pip install virtualenv
+```
+
+whether you're using Windows.
+If you are running in Linux, type
+
+
+```
+mkdir ~/virtualEnvironment && cd ~/virtualEnvironment
+```
+
+then clone this GitHub project
+
+```
+git clone https://github.com/aicenter/roadmap-processing.git
+```
+and finally use
 
 ```
 virtualenv --no-site-packages --distribute .env && source .env/bin/activate
 ```
 
 to create isolated Python environments.
+
+
+## Examples of usage
+
+First of all, check your versions of required packages
+
+```
+python install_requirements.py
+```
+
+after that you can simply download your favourite city.
+
+```
+python mapdownloader.py "Barcelona"
+```
+
+You can skip this, if you have own city area and continue with
+
+```
+python run_demo.py map.osm -r
+```
+and your final result is in folder "/data" as "output-final-result.geojson".
 
 ## Running the tests
 
