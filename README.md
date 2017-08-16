@@ -8,7 +8,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-We work with [pip](https://pypi.python.org/pypi/pip), [wget](https://www.gnu.org/software/wget/) and [virtualenv](https://virtualenv.pypa.io/en/stable/). You can follow steps below to install it properly.
+We will work with [pip](https://pypi.python.org/pypi/pip), [wget](https://www.gnu.org/software/wget/) and [virtualenv](https://virtualenv.pypa.io/en/stable/)(optional). You can follow steps below to install it properly.
 
 ### Installing
 
