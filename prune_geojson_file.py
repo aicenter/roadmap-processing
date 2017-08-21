@@ -135,7 +135,7 @@ class Pruning_geojson_file:
                     new_item = self.get_single_pair_of_coords(u, v, temp, id_iterator, True)
                     self.json_dict['features'].append(new_item)
                     if 'oneway' in item['properties']:
-                        if item['properties']['oneway'] == 'no':
+                        if item['properties']['oneway'] != 'yes':
                             id_iterator += 1
                             temp = copy.deepcopy(item)
                             new_item = self.get_single_pair_of_coords(v, u, temp, id_iterator, False)
