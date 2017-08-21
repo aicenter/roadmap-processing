@@ -50,10 +50,10 @@ git clone git@github.com:aicenter/roadmap-processing.git
 and finally use
 
 ```
-virtualenv --no-site-packages --distribute .env && source .env/bin/activate
+virtualenv --python path/to/python2.7/interpreter --no-site-packages --distribute .env && source .env/bin/activate
 ```
 
-to create isolated Python environments.
+where you subtitute path/to/python2.7/interpreter with your own path to python 2.7 interpreter to create isolated Python environment.
 
 
 ## Examples of usage
