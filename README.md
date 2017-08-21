@@ -24,14 +24,13 @@ for installing pip and
 sudo pip install virtualenv
 ```
 
-for virtualenv or
+for virtualenv or eventually on Windows use
 
 
 ```
 pip install virtualenv
 ```
 
-whether you're using Windows.
 If you are running in Linux, type
 
 
@@ -44,13 +43,17 @@ then clone this GitHub project
 ```
 git clone https://github.com/aicenter/roadmap-processing.git
 ```
+or clone with ssh
+```
+git clone git@github.com:aicenter/roadmap-processing.git
+```
 and finally use
 
 ```
-virtualenv --no-site-packages --distribute .env && source .env/bin/activate
+virtualenv --python path/to/python2.7/interpreter --no-site-packages --distribute .env && source .env/bin/activate
 ```
 
-to create isolated Python environments.
+where you subtitute path/to/python2.7/interpreter with your own path to python 2.7 interpreter to create isolated Python environment.
 
 
 ## Examples of usage
