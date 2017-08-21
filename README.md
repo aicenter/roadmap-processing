@@ -24,14 +24,13 @@ for installing pip and
 sudo pip install virtualenv
 ```
 
-for virtualenv or
+for virtualenv or eventually on Windows use
 
 
 ```
 pip install virtualenv
 ```
 
-whether you're using Windows.
 If you are running in Linux, type
 
 
@@ -43,6 +42,10 @@ then clone this GitHub project
 
 ```
 git clone https://github.com/aicenter/roadmap-processing.git
+```
+or clone with ssh
+```
+git clone git@github.com:aicenter/roadmap-processing.git
 ```
 and finally use
 
