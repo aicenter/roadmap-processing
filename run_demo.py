@@ -12,7 +12,7 @@ import time
 start_time = time.time()
 print("starting script..")
 
-configure_and_download_dependecies(sys.argv)
+configure_and_download_dependecies()
 
 # run pipeline...
 print("starting python scripts...\n")
@@ -22,8 +22,8 @@ get_speed_from_osm("data/graph_with_simplified_edges.geojson")  # get speed from
 get_curvature_of_edges("data/speeds-out.geojson")  # add avarage value of curvature in single edge
 postprocessing_geojson("data/curvature-out.geojson")  # extract all intersections of edges in file,validation of geojson file, (optional) 2.param=formated output file
 
-if sys.argv[-1] == '-r':  # removing temporary files
-    remove_temporary_files()
+# if sys.argv[-1] == '-r':  # removing temporary files
+remove_temporary_files()
 
 remove_pyc_files()
 

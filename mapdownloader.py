@@ -12,6 +12,7 @@ import os
 import bz2file
 import time
 import subprocess
+import argparse
 
 
 def map_downloader(url):
@@ -35,10 +36,17 @@ responce = requests.get(url)
 
 list_of_content = [line for line in responce.iter_lines()]
 
-if len(sys.argv) > 1:
-    my_city = sys.argv[1]
-else:
-    my_city = 'Prague'
+# if len(sys.argv) > 1:
+#     my_city = sys.argv[1]
+# else:
+#     my_city = 'Prague'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('city', nargs='?', default="Prague",type=str)
+parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
+arg = parser.parse_args()
+
+my_city = arg.city
 
 all_cities = []
 for line in list_of_content:
@@ -58,6 +66,7 @@ for line in list_of_content:
                     downloading_page = substring_after(line[11], "=")  # http download
                     map_downloader(downloading_page.replace("\"", ""))
 
+                    print("unpacking...")
                     start_time = time.time()
                     bz_file = bz2file.open("map.osm.bz2")
                     with open("map.osm", "w") as out:  # decompress bz2 file
