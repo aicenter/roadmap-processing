@@ -8,7 +8,7 @@ from speed_from_osm import Speed_from_osm
 import subprocess
 
 
-def execute_all_cached(): # approximately 14 %
+def execute_all_bash():
     exit_code = subprocess.call("cat data/output.geojson | python prune_geojson_file.py | python simplify_graph.py | python speed_from_osm.py | python curvature.py | python postprocess_geojson.py > data/result.geojson", shell=True)
     return exit_code
 
@@ -72,7 +72,7 @@ def postprocessing_geojson():
     test.export_points_to_geojson()
     test.postprocessing_file()
     test.is_geojson_valid()
-    test.formated(True)
+    test.formated(False)
     test.save_geojson("data/output-result.geojson")
 
     print("time: %s secs" % (time.time() - start_time))

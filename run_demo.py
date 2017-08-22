@@ -5,7 +5,7 @@ import sys
 if not is_dependencies_satisfied():
     print("some packages are missing, please type: \"python install_requirements.py\"", file=sys.stderr)
     exit(1)
-from python_scripts import postprocessing_geojson, get_curvature_of_edges, simplify_geojson, clean_geojson, get_speed_from_osm,execute_all_cached
+from python_scripts import postprocessing_geojson, get_curvature_of_edges, simplify_geojson, clean_geojson, get_speed_from_osm,execute_all_bash
 from utils import configure_and_download_dependecies, remove_temporary_files, remove_pyc_files
 import time
 
@@ -16,7 +16,7 @@ configure_and_download_dependecies()
 
 # run pipeline...
 print("starting python scripts...\n")
-code = execute_all_cached()
+code = execute_all_bash()
 if code != 0:
     clean_geojson()  # remove all unused features from map
     simplify_geojson()  # simplify edges of graph, (optional) 2.param=simplification lanes and 3.param=simplification curvature
