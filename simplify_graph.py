@@ -4,21 +4,20 @@ import networkx as nx
 import codecs
 from curvature import Calculation_curvature
 from geojson import LineString, Feature
+import argparse
+import sys
 
 
 class Simplifying_graph():
     g = nx.MultiDiGraph()
     temp_dict = dict()
-    curve = Calculation_curvature("not important at all")
+    curve = Calculation_curvature()
     thresholds = [0, 0.01, 0.5, 1, 2]
-
-    def __init__(self, filename):
-        self.filename = filename
 
     def get_node(self, node):
         return (node[1], node[0])  # order latlon
 
-    def set_simplify_lanes(self, check):  # true means dont simplify edges with different num of lanes
+    def set_simplify_lanes(self, check):  # true means don't simplify edges with different num of lanes
         self.check_lanes = not check
 
     def set_simplify_curvature(self, check):
@@ -26,6 +25,14 @@ class Simplifying_graph():
 
     def set_thresholds(self, thresholds):
         self.thresholds = thresholds
+
+    def get_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('input', nargs='?', type=str, action='store', help='input file')
+        parser.add_argument('output', nargs='?', type=str, action='store', help='output file')
+        parser.add_argument('-lanes', action='store_true', default=False, dest='lanes', help='simplify according lanes')
+        parser.add_argument('-cur', action='store_true', default=False, dest='cur', help='simplify according curvatures\' thresholds')
+        return parser.parse_args()
 
     def try_find(self, id):
         if id in self.temp_dict:
@@ -42,11 +49,24 @@ class Simplifying_graph():
         else:
             return [True]
 
-    def load_file_and_graph(self):
-        print("loading file...")
-        with codecs.open(self.filename, encoding='utf8') as f:
-            self.json_dict = geojson.load(f)
-        f.close()
+    def load_file_and_graph(self,filename=None):
+        print("loading file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, encoding='utf8') as f:
+                self.json_dict = geojson.load(f)
+            f.close()
+        else:
+            results = self.get_args()
+            self.set_simplify_lanes(results.lanes)
+            self.set_simplify_curvature(results.cur)
+            if results.input is None:
+                self.json_dict = geojson.load(sys.stdin)
+            else:
+                with codecs.open(results.input, encoding='utf8') as f:
+                    self.json_dict = geojson.load(f)
+                f.close()
+
+
 
         self.id_iterator = len(self.json_dict['features'])
 
@@ -59,9 +79,9 @@ class Simplifying_graph():
                 self.g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=[[]], lanes=lanes)
 
     def simplify_graph(self):
-        print("processing...\nbefore simplifying..")
-        print("number of nodes: ", self.g.number_of_nodes())
-        print("number of edges: ", self.g.number_of_edges())
+        print("processing...\nbefore simplifying..", file=sys.stderr)
+        print("number of nodes: ", self.g.number_of_nodes(), file=sys.stderr)
+        print("number of edges: ", self.g.number_of_edges(), file=sys.stderr)
 
         for n, _ in self.g.adjacency_iter():
             if self.g.out_degree(n) == 1 and self.g.in_degree(n) == 1:  # oneways
@@ -69,9 +89,9 @@ class Simplifying_graph():
             elif self.g.out_degree(n) == 2 and self.g.in_degree(n) == 2:  # both directions in highway
                 self.simplify_twoways(n)
 
-        print("after simplifying..")
-        print("number of nodes: ", self.g.number_of_nodes())
-        print("number of edges: ", self.g.number_of_edges())
+        print("after simplifying..", file=sys.stderr)
+        print("number of nodes: ", self.g.number_of_nodes(), file=sys.stderr)
+        print("number of edges: ", self.g.number_of_edges(), file=sys.stderr)
 
     def get_threshold(self, curvature):
         counter = 0
@@ -84,8 +104,6 @@ class Simplifying_graph():
     def cut_edges_off(self, item):
         coords = item['geometry']['coordinates']
         first_edge = coords[0:3]
-        # print coords
-        # print first_edge
         end = False
         last_node = 0
         for i in range(3, len(coords), 2):
@@ -196,25 +214,36 @@ class Simplifying_graph():
                 del item['geometry']['coordinates']
                 item['geometry']['coordinates'] = data[1:]
 
-        print("number of deleted edges: ", counter)
+        print("number of deleted edges: ", counter, file=sys.stderr)
 
-    def save_file_to_geojson(self):
         self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
         if self.check_curvature == True:
             self.simplify_curvature()
-        print("saving file...")
-        self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
-        with open("data/graph_with_simplified_edges.geojson", 'w') as outfile:
-            geojson.dump(self.json_dict, outfile)
-        outfile.close()
+            self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
+
+    def save_file_to_geojson(self,filename=None):
+        print("saving file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, 'w') as out:
+                geojson.dump(self.json_dict, out)
+            out.close()
+        else:
+            output_filename = self.get_args()
+            if output_filename.output is None:
+                geojson.dump(self.json_dict, sys.stdout)
+            else:
+                with codecs.open(output_filename.output, 'w') as out:
+                    geojson.dump(self.json_dict, out)
+                out.close()
+
 
 
 # EXAMPLE OF USAGE
 if __name__ == '__main__':
-    test = Simplifying_graph("data/pruned_file.geojson")
+    test = Simplifying_graph()
     test.load_file_and_graph()
-    test.set_simplify_lanes(False)  # set True whether you don't want to simplify edges with different number of lanes
-    test.set_simplify_curvature(False)  # set True whether you don't want to simplify edges with different curvature
+#    test.set_simplify_lanes(False)  # set True whether you don't want to simplify edges with different number of lanes
+#    test.set_simplify_curvature(False)  # set True whether you don't want to simplify edges with different curvature
     test.simplify_graph()
     test.prepare_to_saving_optimized()
     test.save_file_to_geojson()

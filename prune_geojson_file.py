@@ -3,20 +3,27 @@ import geojson
 import codecs
 import copy
 import logging
+import argparse
+import sys
 
 
 class Pruning_geojson_file:
     set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel', 'traffic_calming', 'lanes:forward', 'lanes:backward'}
-    dict_of_useful_properties = {'highway': str, 'id': long, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str, 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int, 'lanes:backward': int}
+    dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str, 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int, 'lanes:backward': int}
 
-    def __init__(self, filename):
+    def __init__(self):
         self.logger = logging.getLogger('OSM_errors')
         hdlr = logging.FileHandler('data/log.log')
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         hdlr.setFormatter(formatter)
         self.logger.addHandler(hdlr)
         self.logger.setLevel(logging.WARNING)  # warnings and worse
-        self.filename = filename
+
+    def get_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('input',nargs='?', type=str, action='store', help='input file')
+        parser.add_argument('output',nargs='?', type=str, action='store', help='output file')
+        return parser.parse_args()
 
     def remove_properties(self, item):
         temp_dict_with_props = copy.deepcopy(item['properties'])
@@ -25,11 +32,20 @@ class Pruning_geojson_file:
                 del item['properties'][prop]
         return item
 
-    def load_file(self):
-        print("loading file...")
-        with codecs.open(self.filename, encoding='utf8') as f:
-            self.json_dict = geojson.load(f)
-        f.close()
+    def load_file(self,filename=None):
+        print("loading file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, encoding='utf8') as f:
+                self.json_dict = geojson.load(f)
+            f.close()
+        else:
+            input_filename = self.get_args()
+            if input_filename.input is None:
+                self.json_dict = geojson.load(sys.stdin)
+            else:
+                with codecs.open(input_filename.input, encoding='utf8') as f:
+                    self.json_dict = geojson.load(f)
+                f.close()
 
         self.fill_new_geojson_with_deleted_items()
 
@@ -93,9 +109,9 @@ class Pruning_geojson_file:
                         # self.warnings += "\"{}\" should be string in {}\n".format(item['properties'][prop],prop)
                         self.write_to_log(item['properties'][prop], prop, "string", item['id'])
                         del item['properties'][prop]
-                elif self.dict_of_useful_properties[prop] == long:
+                elif self.dict_of_useful_properties[prop] == int:
                     try:
-                        long(item['properties'][prop])
+                        int(item['properties'][prop])
                     except:
                         # self.warnings += "\"{}\" should be long in {}\n".format(item['properties'][prop],prop)
                         self.write_to_log(item['properties'][prop], prop, "long", item['id'])
@@ -119,7 +135,7 @@ class Pruning_geojson_file:
                         del item['properties'][prop]
 
     def prune_geojson_file(self):
-        print("processing...")
+        print("processing...", file=sys.stderr)
         id_iterator = 0
         length = len(self.json_dict['features'])
 
@@ -153,17 +169,28 @@ class Pruning_geojson_file:
 
             item.clear()
 
-    def save_pruned_geojson(self):
-        print("saving file...")
+    def save_geojson_file(self,filename=None):
+        print("saving file...",file=sys.stderr)
         self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
-        with codecs.open("data/pruned_file.geojson", 'w') as out:
-            geojson.dump(self.json_dict, out)
-        out.close()
+        if filename is not None:
+            with codecs.open(filename, 'w') as out:
+                geojson.dump(self.json_dict, out)
+            out.close()
+        else:
+            output_filename =self.get_args()
+            if output_filename.output is None:
+                geojson.dump(self.json_dict, sys.stdout)
+            else:
+                with codecs.open(output_filename.output, 'w') as out:
+                    geojson.dump(self.json_dict, out)
+                out.close()
+
+
 
 
 # EXAMPLE OF USAGE
 if __name__ == '__main__':
-    test = Pruning_geojson_file("data/output.geojson")
+    test = Pruning_geojson_file()
     test.load_file()
     test.prune_geojson_file()
-    test.save_pruned_geojson()
+    test.save_geojson_file()

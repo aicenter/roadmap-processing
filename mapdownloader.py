@@ -42,7 +42,7 @@ list_of_content = [line for line in responce.iter_lines()]
 #     my_city = 'Prague'
 
 parser = argparse.ArgumentParser()
-parser.add_argument('city', nargs='?', default="Prague",type=str)
+parser.add_argument('city', nargs='?', default="Prague",type=str,help="name of city to download")
 parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
 arg = parser.parse_args()
 

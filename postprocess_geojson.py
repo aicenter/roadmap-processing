@@ -3,13 +3,14 @@ import geojson
 import codecs
 from geojson import Point,Feature,FeatureCollection
 import networkx as nx
+import sys
+import argparse
 
 class Postprocessing:
 
     g = nx.MultiDiGraph()
 
-    def __init__(self,filename):
-        self.filename = filename
+    def __init__(self):
         self.json_dict = {}
 
     def get_node(self,node):
@@ -18,11 +19,28 @@ class Postprocessing:
     def formated(self,check):
         self.is_formated = check
 
-    def load_geojson_and_graph(self):
-        print("loading file...")
-        with codecs.open(self.filename, encoding='utf8') as f:
-            self.json_dict = geojson.load(f)
-        f.close()
+    def get_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('input', nargs='?', type=str, action='store', help='input file')
+        parser.add_argument('output', nargs='?', type=str, action='store', help='output file')
+        parser.add_argument('-formated', action='store_true', default=False, dest='formated', help='format output file')
+        return parser.parse_args()
+
+    def load_geojson_and_graph(self,filename=None):
+        print("loading file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, encoding='utf8') as f:
+                self.json_dict = geojson.load(f)
+            f.close()
+        else:
+            results = self.get_args()
+            self.formated(results.formated)
+            if results.input is None:
+                self.json_dict = geojson.load(sys.stdin)
+            else:
+                with codecs.open(results.input, encoding='utf8') as f:
+                    self.json_dict = geojson.load(f)
+                f.close()
 
         for item in self.json_dict['features']:
             coord = item['geometry']['coordinates']
@@ -32,10 +50,10 @@ class Postprocessing:
 
     def is_geojson_valid(self):
         validation = geojson.is_valid(self.json_dict)
-        print("is geoJSON valid?", validation['valid'])
+        print("is geoJSON valid?", validation['valid'], file=sys.stderr)
 
     def export_points_to_geojson(self):
-        print("exporting points...")
+        print("exporting points...", file=sys.stderr)
         list_of_features = []
         for n, _ in self.g.adjacency_iter():
             node_id = self.get_nodeID(str(n))
@@ -56,7 +74,7 @@ class Postprocessing:
         return node_id #int(node_id)
 
     def postprocessing_file(self):
-        print("processing...")
+        print("processing...", file=sys.stderr)
         for item in self.json_dict['features']:
             #item['properties']['length'] = item['properties']['distance_best_guess']
             #item['properties']['speed'] = item['properties']['speed_best_guess']
@@ -73,20 +91,36 @@ class Postprocessing:
             item['properties']['from_id'] = from_nodeID
             item['properties']['to_id'] = to_nodeID
 
-    def save_geojson(self):
-        print("saving file...")
-        with open('data/output-final-result.geojson', 'w') as outfile:
-            if self.is_formated==False:
-                geojson.dump(self.json_dict, outfile)
+    def save_geojson(self,filename=None):
+        print("saving file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, 'w') as out:
+                if self.is_formated == False:
+                    geojson.dump(self.json_dict, out)
+                else:
+                    geojson.dump(self.json_dict, out, indent=4, sort_keys=True)
+            out.close()
+        else:
+            output_filename = self.get_args()
+            if output_filename.output is None:
+                if self.is_formated == False:
+                    geojson.dump(self.json_dict, sys.stdout)
+                else:
+                    geojson.dump(self.json_dict, sys.stdout, indent=4, sort_keys=True)
             else:
-                geojson.dump(self.json_dict, outfile, indent=4, sort_keys=True)
-        outfile.close()
+                with codecs.open(output_filename.output, 'w') as out:
+                    if self.is_formated == False:
+                        geojson.dump(self.json_dict, out)
+                    else:
+                        geojson.dump(self.json_dict, out, indent=4, sort_keys=True)
+                out.close()
 
 #EXAMPLE OF USAGE
 if __name__ == '__main__':
-    test = Postprocessing("output-curvature.geojson")
+    test = Postprocessing()
     test.load_geojson_and_graph()
     test.is_geojson_valid()
     test.export_points_to_geojson()
     test.postprocessing_file()
+#    test.formated(False)
     test.save_geojson()

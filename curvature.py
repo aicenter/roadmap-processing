@@ -2,11 +2,12 @@ from __future__ import division, print_function
 import math
 import geojson
 import codecs
+import sys
+import argparse
 
 
 class Calculation_curvature:
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self):
         self.json_curvature = {}
 
     def get_node(self, node):  # latlon
@@ -75,29 +76,53 @@ class Calculation_curvature:
             # length_of_edge = self.get_length(coords)
             return [total_curvature / length_of_edge, max_curvature]
 
-    def load_geojson(self):
-        print("loading file...")
-        with codecs.open(self.filename, encoding='utf8') as f:
-            self.json_curvature = geojson.load(f)
-        f.close()
+    def get_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('input',nargs='?', type=str, action='store', help='input file')
+        parser.add_argument('output',nargs='?', type=str, action='store', help='output file')
+        return parser.parse_args()
+
+    def load_geojson(self,filename=None):
+        print("loading file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, encoding='utf8') as f:
+                self.json_curvature = geojson.load(f)
+            f.close()
+        else:
+            input_filename = self.get_args()
+            if input_filename.input is None:
+                self.json_curvature = geojson.load(sys.stdin)
+            else:
+                with codecs.open(input_filename.input, encoding='utf8') as f:
+                    self.json_curvature = geojson.load(f)
+                f.close()
 
     def analyse_roads(self):
-        print("processing...")
+        print("processing...", file=sys.stderr)
         for item in self.json_curvature['features']:
             cur = self.calculate_curvature(item['geometry']['coordinates'])
             item['properties']['curvature'] = cur[0]
             item['properties']['max_curvature'] = cur[1]
 
-    def save_geojson(self):
-        print("saving file...")
-        with open('data/curvature-out.geojson', 'w') as outfile:
-            geojson.dump(self.json_curvature, outfile)
-        outfile.close()
+    def save_geojson(self,filename=None):
+        print("saving file...", file=sys.stderr)
+        if filename is not None:
+            with codecs.open(filename, 'w') as out:
+                geojson.dump(self.json_curvature, out)
+            out.close()
+        else:
+            output_filename = self.get_args()
+            if output_filename.output is None:
+                geojson.dump(self.json_curvature, sys.stdout)
+            else:
+                with codecs.open(output_filename.output, 'w') as out:
+                    geojson.dump(self.json_curvature, out)
+                out.close()
 
 
 # EXAMPLE OF USAGE
 if __name__ == '__main__':
-    test = Calculation_curvature("data/graph_with_simplified_edges.geojson")
+    test = Calculation_curvature()
     test.load_geojson()
     test.analyse_roads()
     test.save_geojson()
