@@ -152,6 +152,7 @@ def prune_geojson_file(json_dict):
                 else:
                     if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link' or item['properties']['highway'] == 'trunk_link' \
                             or item['properties']['highway'] == 'primary_link' or ('junction' in item['properties'] and item['properties']['junction'] == 'roundabout'):
+                        id_iterator += 1
                         continue
                     id_iterator += 1
                     temp = copy.deepcopy(item)
