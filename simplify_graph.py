@@ -2,248 +2,243 @@ from __future__ import print_function
 import geojson
 import networkx as nx
 import codecs
-from curvature import Calculation_curvature
+from curvature import calculate_curvature
 from geojson import LineString, Feature
 import argparse
 import sys
+from utils import err_print
+
+temp_dict = dict()
+thresholds = [0, 0.01, 0.5, 1, 2]
 
 
-class Simplifying_graph():
+def execute(input_stream, output_stream, l_check, c_check):
+    check_lanes = not l_check  # true means don't simplify edges with different num of lanes
+    check_curvatures = c_check
+    json_dict = load_file(input_stream)
+    graph = load_graph(json_dict)
+    simplify_graph(graph, check_lanes)
+    prepare_to_saving_optimized(graph, json_dict)
+    if check_curvatures:
+        simplify_curvature(json_dict)
+        json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+    save_file_to_geojson(json_dict, output_stream)
+
+
+def get_node(node):
+    return (node[1], node[0])  # order latlon
+
+
+def try_find(id):
+    if id in temp_dict:
+        n1 = temp_dict[id]['node'][1]
+        n2 = temp_dict[id]['node'][0]
+        nbr1 = temp_dict[id]['neighbour'][1]
+        nbr2 = temp_dict[id]['neighbour'][0]
+        coords = filter(None, temp_dict[id]['coords'])
+        ret = [False, [n1, n2]]
+        for node in coords:
+            ret.append(node)
+        ret.append([nbr1, nbr2])
+        return ret
+    else:
+        return [True]
+
+
+def load_file(in_stream):
+    err_print("loading file...")
+    json_dict = geojson.load(in_stream)
+    return json_dict
+
+
+def load_graph(json_dict):
+    err_print("loading graph...")
     g = nx.MultiDiGraph()
-    temp_dict = dict()
-    curve = Calculation_curvature()
-    thresholds = [0, 0.01, 0.5, 1, 2]
+    for item in json_dict['features']:
+        coord = item['geometry']['coordinates']
+        coord_u = get_node(coord[0])
+        coord_v = get_node(coord[-1])
+        if coord_u != coord_v or len(coord) != 2:  # prune loops without any purpose, save loops like traffic roundabout
+            lanes = item['properties']['lanes']
+            g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=[[]], lanes=lanes)
+    return g
 
-    def get_node(self, node):
-        return (node[1], node[0])  # order latlon
 
-    def set_simplify_lanes(self, check):  # true means don't simplify edges with different num of lanes
-        self.check_lanes = not check
+def simplify_graph(g, check_lanes):
+    err_print("processing...\nbefore simplifying...")
+    err_print("number of nodes: ", g.number_of_nodes())
+    err_print("number of edges: ", g.number_of_edges())
 
-    def set_simplify_curvature(self, check):
-        self.check_curvature = check
+    for n, _ in g.adjacency_iter():
+        if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
+            simplify_oneways(n, g, check_lanes)
+        elif g.out_degree(n) == 2 and g.in_degree(n) == 2:  # both directions in highway
+            simplify_twoways(n, g, check_lanes)
 
-    def set_thresholds(self, thresholds):
-        self.thresholds = thresholds
+    err_print("after simplifying...")
+    err_print("number of nodes: ", g.number_of_nodes())
+    err_print("number of edges: ", g.number_of_edges())
 
-    def get_args(self):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('input', nargs='?', type=str, action='store', help='input file')
-        parser.add_argument('output', nargs='?', type=str, action='store', help='output file')
-        parser.add_argument('-lanes', action='store_true', default=False, dest='lanes', help='simplify according lanes')
-        parser.add_argument('-cur', action='store_true', default=False, dest='cur', help='simplify according curvatures\' thresholds')
-        return parser.parse_args()
 
-    def try_find(self, id):
-        if id in self.temp_dict:
-            n1 = self.temp_dict[id]['node'][1]
-            n2 = self.temp_dict[id]['node'][0]
-            nbr1 = self.temp_dict[id]['neighbour'][1]
-            nbr2 = self.temp_dict[id]['neighbour'][0]
-            coords = filter(None, self.temp_dict[id]['coords'])
-            ret = [False, [n1, n2]]
-            for node in coords:
-                ret.append(node)
-            ret.append([nbr1, nbr2])
-            return ret
+def get_threshold(curvature):
+    counter = 0
+    for i in range(0, len(thresholds) - 1):
+        if thresholds[i] < curvature and curvature < thresholds[i + 1]:
+            return counter
+        counter += 1
+    return counter  # bigger then last interval
+
+
+def cut_edges_off(item, id_iterator, json_dict):
+    coords = item['geometry']['coordinates']
+    first_edge = coords[0:3]
+    end = False
+    last_node = 0
+    for i in range(3, len(coords), 2):
+        if len(coords[i - 1:len(coords)]) < 5:
+            second_edge = coords[i - 1:len(coords)]
+            end = True
         else:
-            return [True]
-
-    def load_file_and_graph(self,filename=None):
-        print("loading file...", file=sys.stderr)
-        if filename is not None:
-            with codecs.open(filename, encoding='utf8') as f:
-                self.json_dict = geojson.load(f)
-            f.close()
+            second_edge = coords[i - 1:i + 2]
+        res1 = calculate_curvature(first_edge)
+        res2 = calculate_curvature(second_edge)
+        u = get_threshold(res1[0])
+        v = get_threshold(res2[0])
+        if u != v:
+            line_string = LineString(coordinates=coords[last_node:i])
+            last_node = i - 1
+            id_iterator += 1
+            feature = Feature(geometry=line_string, id=id_iterator, properties=item['properties'])
+            json_dict['features'].append(feature)
+        if end == True:
+            break
         else:
-            results = self.get_args()
-            self.set_simplify_lanes(results.lanes)
-            self.set_simplify_curvature(results.cur)
-            if results.input is None:
-                self.json_dict = geojson.load(sys.stdin)
-            else:
-                with codecs.open(results.input, encoding='utf8') as f:
-                    self.json_dict = geojson.load(f)
-                f.close()
+            first_edge = second_edge
+
+    line_string = LineString(coordinates=coords[last_node:len(coords)])
+    feature = Feature(geometry=line_string, id=id_iterator, properties=item['properties'])
+    return feature
 
 
+def simplify_curvature(json_dict):
+    length = len(json_dict['features'])
+    id_iterator = length + 1
+    for i in range(0, length):
+        if len(json_dict['features'][i]['geometry']['coordinates']) > 4:
+            feature = cut_edges_off(json_dict['features'][i], id_iterator, json_dict)
+            id_iterator += 1
+            json_dict['features'].append(feature)
+            json_dict['features'][i].clear()
 
-        self.id_iterator = len(self.json_dict['features'])
 
-        for item in self.json_dict['features']:
-            coord = item['geometry']['coordinates']
-            coord_u = self.get_node(coord[0])
-            coord_v = self.get_node(coord[-1])
-            if coord_u != coord_v or len(coord) != 2:  # prune loops without any purpose, save loops like traffic roundabout
-                lanes = item['properties']['lanes']
-                self.g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=[[]], lanes=lanes)
+def simplify_oneways(n, g, check_lanes):
+    edge_u = g.out_edges(n, data=True)[0][:2]
+    temp = reversed(edge_u)
+    edge_u = tuple(temp)
+    edge_v = g.in_edges(n, data=True)[0][:2]
+    new_id = g.out_edges(n, data=True)[0][2]['id']
+    coords = filter(None, g.in_edges(n, data=True)[0][2]['others'] + [[n[1], n[0]]] + g.out_edges(n, data=True)[0][2]['others'])
+    lanes_u = g.out_edges(n, data=True)[0][2]['lanes']
+    lanes_v = g.in_edges(n, data=True)[0][2]['lanes']
+    if edge_u != edge_v:
+        # remove edges and node
+        if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
+            g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
+            g.remove_edge(edge_u[1], edge_u[0])
+            g.remove_edge(edge_v[0], edge_v[1])
+            g.remove_node(n)
 
-    def simplify_graph(self):
-        print("processing...\nbefore simplifying..", file=sys.stderr)
-        print("number of nodes: ", self.g.number_of_nodes(), file=sys.stderr)
-        print("number of edges: ", self.g.number_of_edges(), file=sys.stderr)
 
-        for n, _ in self.g.adjacency_iter():
-            if self.g.out_degree(n) == 1 and self.g.in_degree(n) == 1:  # oneways
-                self.simplify_oneways(n)
-            elif self.g.out_degree(n) == 2 and self.g.in_degree(n) == 2:  # both directions in highway
-                self.simplify_twoways(n)
+def simplify_twoways(n, g, check_lanes):
+    edge_u1 = g.out_edges(n, data=True)[0][:2]
+    edge_u2 = g.out_edges(n, data=True)[1][:2]
+    temp1 = reversed(edge_u1)
+    edge_u1 = tuple(temp1)
+    temp2 = reversed(edge_u2)
+    edge_u2 = tuple(temp2)
+    new_id_out = g.out_edges(n, data=True)[0][2]['id']
+    new_id_in = g.in_edges(n, data=True)[0][2]['id']
+    coords_out = filter(None, g.in_edges(n, data=True)[1][2]['others'] + [[n[1], n[0]]] + g.out_edges(n, data=True)[0][2]['others'])
+    coords_in = list(reversed(coords_out))
+    edge_v1 = g.in_edges(n, data=True)[0][:2]
+    edge_v2 = g.in_edges(n, data=True)[1][:2]
+    edges_u = (edge_u1, edge_u2)
+    edges_v = (edge_v1, edge_v2)
+    lanes_u1 = g.out_edges(n, data=True)[0][2]['lanes']
+    lanes_u2 = g.out_edges(n, data=True)[1][2]['lanes']
+    lanes_v1 = g.in_edges(n, data=True)[0][2]['lanes']
+    lanes_v2 = g.in_edges(n, data=True)[1][2]['lanes']
+    if edges_u == edges_v:
+        # remove edges and node
+        is_deleted = [False, False]
+        if lanes_u1 == lanes_v2 or lanes_u1 is None or lanes_v2 is None or check_lanes:  # merge only edges with same number of lanes
+            g.remove_edge(edge_u1[1], edge_u1[0])
+            g.remove_edge(edge_u2[0], edge_u2[1])
+            g.add_edge(edge_v2[0], edge_v1[0], id=new_id_out, others=coords_out, lanes=lanes_u1)
+            is_deleted[0] = True
+        if lanes_u2 == lanes_v1 or lanes_u2 == None or lanes_v1 == None or check_lanes:  # merge only edges with same number of lanes
+            if edge_u1[1] != edge_u1[0] or edge_u2[0] != edge_u2[1]:  # check  loops
+                g.remove_edge(edge_u1[0], edge_u1[1])
+                g.remove_edge(edge_u2[1], edge_u2[0])
+                g.add_edge(edge_v1[0], edge_v2[0], id=new_id_in, others=coords_in, lanes=lanes_v1)
+                is_deleted[1] = True
 
-        print("after simplifying..", file=sys.stderr)
-        print("number of nodes: ", self.g.number_of_nodes(), file=sys.stderr)
-        print("number of edges: ", self.g.number_of_edges(), file=sys.stderr)
+        if is_deleted[0] == True and is_deleted[1] == True or check_lanes:
+            g.remove_node(n)
 
-    def get_threshold(self, curvature):
-        counter = 0
-        for i in range(0, len(self.thresholds) - 1):
-            if self.thresholds[i] < curvature and curvature < self.thresholds[i + 1]:
-                return counter
+
+def prepare_to_saving_optimized(g, json_dict):
+    list_of_edges = list(g.edges_iter(data=True))
+
+    for edge in list_of_edges:
+        id = edge[2]['id']
+        temp_dict[id] = {}
+        temp_dict[id]['node'] = edge[0]
+        temp_dict[id]['neighbour'] = edge[1]
+        temp_dict[id]['coords'] = edge[2]['others']
+
+    counter = 0
+    for item in json_dict['features']:
+        data = try_find(item['properties']['id'])
+        if data[0]:
             counter += 1
-        return counter  # bigger then last interval
-
-    def cut_edges_off(self, item):
-        coords = item['geometry']['coordinates']
-        first_edge = coords[0:3]
-        end = False
-        last_node = 0
-        for i in range(3, len(coords), 2):
-            if len(coords[i - 1:len(coords)]) < 5:
-                second_edge = coords[i - 1:len(coords)]
-                end = True
-            else:
-                second_edge = coords[i - 1:i + 2]
-            res1 = self.curve.calculate_curvature(first_edge)
-            res2 = self.curve.calculate_curvature(second_edge)
-            u = self.get_threshold(res1[0])
-            v = self.get_threshold(res2[0])
-            if u != v:
-                line_string = LineString(coordinates=coords[last_node:i])
-                last_node = i - 1
-                self.id_iterator += 1
-                feature = Feature(geometry=line_string, id=self.id_iterator, properties=item['properties'])
-                self.json_dict['features'].append(feature)
-            if end == True:
-                break
-            else:
-                first_edge = second_edge
-
-        line_string = LineString(coordinates=coords[last_node:len(coords)])
-
-        self.id_iterator += 1
-        feature = Feature(geometry=line_string, id=self.id_iterator, properties=item['properties'])
-        self.json_dict['features'].append(feature)
-
-    def simplify_curvature(self):
-        length = len(self.json_dict['features'])
-        for i in range(0, length):
-            if len(self.json_dict['features'][i]['geometry']['coordinates']) > 4:
-                self.cut_edges_off(self.json_dict['features'][i])
-                self.json_dict['features'][i].clear()
-
-    def simplify_oneways(self, n):
-        edge_u = self.g.out_edges(n, data=True)[0][:2]
-        temp = reversed(edge_u)
-        edge_u = tuple(temp)
-        edge_v = self.g.in_edges(n, data=True)[0][:2]
-        new_id = self.g.out_edges(n, data=True)[0][2]['id']
-        coords = filter(None, self.g.in_edges(n, data=True)[0][2]['others'] + [[n[1], n[0]]] + self.g.out_edges(n, data=True)[0][2]['others'])
-        lanes_u = self.g.out_edges(n, data=True)[0][2]['lanes']
-        lanes_v = self.g.in_edges(n, data=True)[0][2]['lanes']
-        if edge_u != edge_v:
-            # remove edges and node
-            if lanes_u == lanes_v or lanes_u == None or lanes_v == None or self.check_lanes:  # merge only edges with same number of lanes
-                self.g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
-                self.g.remove_edge(edge_u[1], edge_u[0])
-                self.g.remove_edge(edge_v[0], edge_v[1])
-                self.g.remove_node(n)
-
-    def simplify_twoways(self, n):
-        edge_u1 = self.g.out_edges(n, data=True)[0][:2]
-        edge_u2 = self.g.out_edges(n, data=True)[1][:2]
-        temp1 = reversed(edge_u1)
-        edge_u1 = tuple(temp1)
-        temp2 = reversed(edge_u2)
-        edge_u2 = tuple(temp2)
-        new_id_out = self.g.out_edges(n, data=True)[0][2]['id']
-        new_id_in = self.g.in_edges(n, data=True)[0][2]['id']
-        coords_out = filter(None, self.g.in_edges(n, data=True)[1][2]['others'] + [[n[1], n[0]]] + self.g.out_edges(n, data=True)[0][2]['others'])
-        coords_in = list(reversed(coords_out))
-        edge_v1 = self.g.in_edges(n, data=True)[0][:2]
-        edge_v2 = self.g.in_edges(n, data=True)[1][:2]
-        edges_u = (edge_u1, edge_u2)
-        edges_v = (edge_v1, edge_v2)
-        lanes_u1 = self.g.out_edges(n, data=True)[0][2]['lanes']
-        lanes_u2 = self.g.out_edges(n, data=True)[1][2]['lanes']
-        lanes_v1 = self.g.in_edges(n, data=True)[0][2]['lanes']
-        lanes_v2 = self.g.in_edges(n, data=True)[1][2]['lanes']
-        if edges_u == edges_v:
-            # remove edges and node
-            is_deleted = [False, False]
-            if lanes_u1 == lanes_v2 or lanes_u1 == None or lanes_v2 == None or self.check_lanes:  # merge only edges with same number of lanes
-                self.g.remove_edge(edge_u1[1], edge_u1[0])
-                self.g.remove_edge(edge_u2[0], edge_u2[1])
-                self.g.add_edge(edge_v2[0], edge_v1[0], id=new_id_out, others=coords_out, lanes=lanes_u1)
-                is_deleted[0] = True
-            if lanes_u2 == lanes_v1 or lanes_u2 == None or lanes_v1 == None or self.check_lanes:  # merge only edges with same number of lanes
-                if edge_u1[1] != edge_u1[0] or edge_u2[0] != edge_u2[1]:  # check self loops
-                    self.g.remove_edge(edge_u1[0], edge_u1[1])
-                    self.g.remove_edge(edge_u2[1], edge_u2[0])
-                    self.g.add_edge(edge_v1[0], edge_v2[0], id=new_id_in, others=coords_in, lanes=lanes_v1)
-                    is_deleted[1] = True
-
-            if is_deleted[0] == True and is_deleted[1] == True or self.check_lanes:
-                self.g.remove_node(n)
-
-    def prepare_to_saving_optimized(self):
-        list_of_edges = list(self.g.edges_iter(data=True))
-
-        for edge in list_of_edges:
-            id = edge[2]['id']
-            self.temp_dict[id] = {}
-            self.temp_dict[id]['node'] = edge[0]
-            self.temp_dict[id]['neighbour'] = edge[1]
-            self.temp_dict[id]['coords'] = edge[2]['others']
-
-        counter = 0
-        for item in self.json_dict['features']:
-            data = self.try_find(item['properties']['id'])
-            if data[0]:
-                counter += 1
-                item.clear()
-            else:
-                del item['geometry']['coordinates']
-                item['geometry']['coordinates'] = data[1:]
-
-        print("number of deleted edges: ", counter, file=sys.stderr)
-
-        self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
-        if self.check_curvature == True:
-            self.simplify_curvature()
-            self.json_dict['features'] = [i for i in self.json_dict["features"] if i]  # remove empty dicts
-
-    def save_file_to_geojson(self,filename=None):
-        print("saving file...", file=sys.stderr)
-        if filename is not None:
-            with codecs.open(filename, 'w') as out:
-                geojson.dump(self.json_dict, out)
-            out.close()
+            item.clear()
         else:
-            output_filename = self.get_args()
-            if output_filename.output is None:
-                geojson.dump(self.json_dict, sys.stdout)
-            else:
-                with codecs.open(output_filename.output, 'w') as out:
-                    geojson.dump(self.json_dict, out)
-                out.close()
+            del item['geometry']['coordinates']
+            item['geometry']['coordinates'] = data[1:]
 
+    err_print("number of deleted edges: ", counter)
+
+    json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+
+
+def save_file_to_geojson(json_dict, out_stream):
+    err_print("saving file...")
+    geojson.dump(json_dict, out_stream)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', dest="input", type=str, action='store', help='input file')
+    parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
+    parser.add_argument('-lanes', action='store_true', default=False, dest='lanes', help='simplify according lanes')
+    parser.add_argument('-cur', action='store_true', default=False, dest='curs', help='simplify according curvatures\' thresholds')
+    return parser.parse_args()
 
 
 # EXAMPLE OF USAGE
 if __name__ == '__main__':
-    test = Simplifying_graph()
-    test.load_file_and_graph()
-#    test.set_simplify_lanes(False)  # set True whether you don't want to simplify edges with different number of lanes
-#    test.set_simplify_curvature(False)  # set True whether you don't want to simplify edges with different curvature
-    test.simplify_graph()
-    test.prepare_to_saving_optimized()
-    test.save_file_to_geojson()
+    args = get_args()
+    input_stream = sys.stdin
+    output_stream = sys.stdout
+
+    if args.input is not None:
+        input_stream = codecs.open(args.input, encoding='utf8')
+    if args.output is not None:
+        output_stream = codecs.open(args.output, 'w')
+
+    # l_check set True whether you don't want to simplify edges with different number of lanes
+    # c_check set True whether you don't want to simplify edges with different curvature
+    execute(input_stream, output_stream, l_check=args.lanes, c_check=args.curs)
+    input_stream.close()
+    output_stream.close()

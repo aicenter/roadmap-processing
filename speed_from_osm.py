@@ -1,64 +1,59 @@
 from __future__ import print_function
 import geojson
 import codecs
-from curvature import Calculation_curvature
+from curvature import get_length
+from utils import err_print
 import sys
 import argparse
 
-class Speed_from_osm:
 
-    def get_args(self):
-        parser = argparse.ArgumentParser()
-        parser.add_argument('input', nargs='?', type=str, action='store', help='input file')
-        parser.add_argument('output', nargs='?', type=str, action='store', help='output file')
-        return parser.parse_args()
+def execute(input_stream, output_stream):
+    json_dict = load_file(input_stream)
+    get_speed(json_dict)
+    save_geojson(output_stream, json_dict)
 
-    def load_file_and_graph(self,filename=None):
-        print("loading file...", file=sys.stderr)
-        if filename is not None:
-            with codecs.open(filename, encoding='utf8') as f:
-                self.json_dict = geojson.load(f)
-            f.close()
+
+def load_file(in_stream):
+    err_print("loading file...")
+    json_dict = geojson.load(in_stream)
+    return json_dict
+
+
+def get_speed(json_dict):
+    err_print("getting speed from map...")
+    for item in json_dict['features']:
+        if 'maxspeed' not in item['properties']:
+            if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
+                item['properties']['speed'] = 130
+            else:
+                item['properties']['speed'] = 50
         else:
-            input_filename = self.get_args()
-            if input_filename.input is None:
-                self.json_dict = geojson.load(sys.stdin)
-            else:
-                with codecs.open(input_filename.input, encoding='utf8') as f:
-                    self.json_dict = geojson.load(f)
-                f.close()
+            item['properties']['speed'] = int(item['properties']['maxspeed'])
+        item['properties']['length'] = get_length(item['geometry']['coordinates'])
 
-    def get_speed(self):
-        print("getting speed from map...", file=sys.stderr)
-        util = Calculation_curvature()
-        for item in self.json_dict['features']:
-            if 'maxspeed' not in item['properties']:
-                if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
-                    item['properties']['speed'] = 130
-                else:
-                    item['properties']['speed'] = 50
-            else:
-                item['properties']['speed'] = int(item['properties']['maxspeed'])
-            item['properties']['length'] = util.get_length(item['geometry']['coordinates'])
 
-    def save_geojson(self,filename=None):
-        print("saving file...", file=sys.stderr)
-        if filename is not None:
-            with codecs.open(filename, 'w') as out:
-                geojson.dump(self.json_dict, out)
-            out.close()
-        else:
-            output_filename = self.get_args()
-            if output_filename.output is None:
-                geojson.dump(self.json_dict, sys.stdout)
-            else:
-                with codecs.open(output_filename.output, 'w') as out:
-                    geojson.dump(self.json_dict, out)
-                out.close()
+def save_geojson(out_stream, json_dict):
+    err_print("saving file...")
+    geojson.dump(json_dict, out_stream)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', dest="input", type=str, action='store', help='input file')
+    parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
-    test = Speed_from_osm()
-    test.load_file_and_graph()
-    test.get_speed()
-    test.save_geojson()
+    args = get_args()
+    input_stream = sys.stdin
+    output_stream = sys.stdout
+
+    if args.input is not None:
+        input_stream = codecs.open(args.input, encoding='utf8')
+    if args.output is not None:
+        output_stream = codecs.open(args.output, 'w')
+
+    execute(input_stream, output_stream)
+    input_stream.close()
+    output_stream.close()
