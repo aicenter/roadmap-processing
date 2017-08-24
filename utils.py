@@ -134,9 +134,9 @@ def remove_temporary_files():
 
 
 def remove_pyc_files():
-    dir = os.path.dirname(os.path.abspath(__file__))  # remove temporary python files
-    files = os.listdir(dir)
+    working_dir = os.path.dirname(os.path.abspath(__file__))  # remove temporary python files
+    files = os.listdir(working_dir)
 
     for item in files:
         if item.endswith(".pyc"):
-            os.remove(join(dir, item))
+            os.remove(join(working_dir, item))

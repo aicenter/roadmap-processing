@@ -4,8 +4,9 @@ import geojson
 from geojson import Point, LineString, Feature, FeatureCollection
 import time
 from utils import err_print
+import argparse
 
-dict_of_coords = {}
+dict_of_coords = dict()
 
 
 def get_all_coordinates(filename):
@@ -55,7 +56,9 @@ def osmtogeojson_converter(filename):
 
 
 if __name__ == '__main__':
-    import sys
+    parser = argparse.ArgumentParser()
+    parser.add_argument('map', type=str, help="map in OSM format")
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
+    arg = parser.parse_args()
 
-    osmtogeojson_converter(sys.argv[1])
-    # osmtogeojson_converter("data/output.osm")
+    osmtogeojson_converter(arg.map)
