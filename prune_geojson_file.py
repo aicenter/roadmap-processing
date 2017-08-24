@@ -68,6 +68,8 @@ def get_single_pair_of_coords(coord_u, coord_v, new_item, id, is_forward):
 
     if 'lanes' not in new_item['properties'] or new_item['properties']['lanes'] < 1:
         new_item['properties']['lanes'] = 1
+    else:
+        new_item['properties']['lanes'] = int(new_item['properties']['lanes'])
 
     new_item['properties']['oneway'] = 'yes'
     return new_item
