@@ -72,7 +72,9 @@ def simplify_graph(g, check_lanes):
     for n, _ in g.adjacency_iter():
         if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
             simplify_oneways(n, g, check_lanes)
-        elif g.out_degree(n) == 2 and g.in_degree(n) == 2:  # both directions in highway
+
+    for n, _ in g.adjacency_iter():
+        if g.out_degree(n) == 2 and g.in_degree(n) == 2:  # both directions in highway
             simplify_twoways(n, g, check_lanes)
 
     err_print("after simplifying...")
@@ -147,6 +149,17 @@ def simplify_oneways(n, g, check_lanes):
             g.remove_edge(edge_u[1], edge_u[0])
             g.remove_edge(edge_v[0], edge_v[1])
             g.remove_node(n)
+    elif edge_u == edge_v and hash_list_of_lists_and_compare(g.in_edges(n, data=True)[0][2]['others'],g.out_edges(n, data=True)[0][2]['others']):
+        if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
+            g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
+            g.remove_edge(edge_u[1], edge_u[0])
+            g.remove_edge(edge_v[0], edge_v[1])
+            g.remove_node(n)
+
+def hash_list_of_lists_and_compare(list1,list2):
+    temp_hash1 = [tuple(i) for i in list1]
+    temp_hash2 = [tuple(i) for i in list2]
+    return set(temp_hash1)!=set(temp_hash2)
 
 
 def simplify_twoways(n, g, check_lanes):
@@ -171,6 +184,15 @@ def simplify_twoways(n, g, check_lanes):
     if edges_u == edges_v:
         # remove edges and node
         is_deleted = [False, False]
+        is_loop = False
+        for i in edges_u:
+            if check_oneway_loop(i):
+                is_loop = True
+        for i in edges_v:
+            if check_oneway_loop(i):
+                is_loop = True
+        if is_loop:
+            return
         if lanes_u1 == lanes_v2 or lanes_u1 is None or lanes_v2 is None or check_lanes:  # merge only edges with same number of lanes
             g.remove_edge(edge_u1[1], edge_u1[0])
             g.remove_edge(edge_u2[0], edge_u2[1])
@@ -186,6 +208,8 @@ def simplify_twoways(n, g, check_lanes):
         if is_deleted[0] == True and is_deleted[1] == True or check_lanes:
             g.remove_node(n)
 
+def check_oneway_loop(edge):
+    return edge[0]==edge[1]
 
 def prepare_to_saving_optimized(g, json_dict):
     list_of_edges = list(g.edges_iter(data=True))
