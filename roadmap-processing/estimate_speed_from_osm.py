@@ -1,8 +1,6 @@
-from __future__ import print_function
 import geojson
 import codecs
-from curvature import get_length
-from utils import err_print
+from calculate_curvature import get_length
 import sys
 import argparse
 
@@ -14,13 +12,12 @@ def execute(input_stream, output_stream):
 
 
 def load_file(in_stream):
-    err_print("loading file...")
+
     json_dict = geojson.load(in_stream)
     return json_dict
 
 
 def get_speed(json_dict):
-    err_print("getting speed from map...")
     for item in json_dict['features']:
         if 'maxspeed' not in item['properties']:
             if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
@@ -33,7 +30,6 @@ def get_speed(json_dict):
 
 
 def save_geojson(out_stream, json_dict):
-    err_print("saving file...")
     geojson.dump(json_dict, out_stream)
 
 

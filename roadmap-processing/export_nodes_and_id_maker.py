@@ -1,19 +1,16 @@
-from __future__ import print_function
 import geojson
 import codecs
 from geojson import Point, Feature, FeatureCollection
 import networkx as nx
 import sys
 import argparse
-from utils import err_print
 
 
-def execute(input_stream, output_stream, formated):
+def execute_id_maker_and_export_nodes(input_stream, output_stream, formated):
     json_dict = load_geojson(input_stream)
     graph = load_graph(json_dict)
     export_points_to_geojson(graph)
     postprocessing_file(json_dict)
-    is_geojson_valid(json_dict)
     save_geojson(json_dict, output_stream, formated)
 
 
@@ -22,13 +19,11 @@ def get_node(node):
 
 
 def load_geojson(in_stream):
-    err_print("loading file...")
     json_dict = geojson.load(in_stream)
     return json_dict
 
 
 def load_graph(json_dict):
-    err_print("loading graph...")
     g = nx.MultiDiGraph()
     for item in json_dict['features']:
         coord = item['geometry']['coordinates']
@@ -38,13 +33,7 @@ def load_graph(json_dict):
     return g
 
 
-def is_geojson_valid(json_dict):
-    validation = geojson.is_valid(json_dict)
-    err_print("is geoJSON valid?", validation['valid'])
-
-
 def export_points_to_geojson(g):
-    err_print("exporting points...")
     list_of_features = []
     #for n, _ in g.adjacency_iter():
     for n in g.nodes_iter():
@@ -67,7 +56,6 @@ def get_nodeID(node_id):  # return String
 
 
 def postprocessing_file(json_dict):
-    err_print("processing...")
     for item in json_dict['features']:
         # item['properties']['length'] = item['properties']['distance_best_guess']
         # item['properties']['speed'] = item['properties']['speed_best_guess']
@@ -86,7 +74,6 @@ def postprocessing_file(json_dict):
 
 
 def save_geojson(json_dict, out_stream, is_formated):
-    err_print("saving file...")
     if is_formated == False:
         geojson.dump(json_dict, out_stream)
     else:
@@ -112,6 +99,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    execute(input_stream, output_stream, args.formated)
+    execute_id_maker_and_export_nodes(input_stream, output_stream, args.formated)
     input_stream.close()
     output_stream.close()

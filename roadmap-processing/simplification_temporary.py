@@ -4,7 +4,7 @@ import networkx as nx
 import codecs
 from simplify_graph import load_file, prepare_to_saving_optimized, save_file_to_geojson, simplify_graph
 import copy
-from postprocess_geojson import export_points_to_geojson
+from export_nodes_and_id_maker import export_points_to_geojson
 
 
 ##udelat komponenty a detekce vice hran mezi 2 nody
@@ -55,7 +55,7 @@ def detect_parallel_edges(g):
                         set_of_edges.add((nbr, n)) #add the second direction to set!!
                         temp_edges.append((g[n][nbr][key], get_node_reversed(n), get_node_reversed(nbr), False))
                     g.remove_edge(n, nbr, key)
-    print len(set_of_edges)
+    # print len(set_of_edges)
 
 
 def get_node_reversed(node):
@@ -67,12 +67,12 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
         if edge[0]['id'] == item['properties']['id']:
             if len(edge[0]['others']) > 0:
                 if edge[3]==True:
-                    print edge[0]['others']
+                    # print edge[0]['others']
                     edge[0]['others'].insert(0,edge[1])
                     line_string1 = LineString(coordinates=(edge[0]['others']))
                     line_string2 = LineString(coordinates=(edge[0]['others'][-1],edge[2]))
-                    print line_string1
-                    print line_string2
+                    # print line_string1
+                    # print line_string2
                 else:
                     line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
                     edge[0]['others'].append(edge[2])
@@ -92,12 +92,12 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
                 y = (edge[1][1] + edge[2][1]) / 2
                 edge[0]['others'] = [[x, y]]
                 if edge[3]==True:
-                    print edge[0]['others']
+                    # print edge[0]['others']
                     edge[0]['others'].insert(0,edge[1])
                     line_string1 = LineString(coordinates=(edge[0]['others']))
                     line_string2 = LineString(coordinates=(edge[0]['others'][-1],edge[2]))
-                    print line_string1
-                    print line_string2
+                    # print line_string1
+                    # print line_string2
                 else:
                     line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
                     edge[0]['others'].append(edge[2])

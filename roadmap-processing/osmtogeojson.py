@@ -2,9 +2,8 @@ from __future__ import print_function
 from osmread import parse_file, Node, Way
 import geojson
 from geojson import Point, LineString, Feature, FeatureCollection
-import time
-from utils import err_print
 import argparse
+import sys
 
 dict_of_coords = dict()
 
@@ -21,13 +20,11 @@ def get_coords_of_edge(nodes):
         try:
             loc_coords.append(dict_of_coords[node])
         except:
-            err_print("this node_id {} is required, but not found in OSM!".format(node))
+            print("this node_id {} is required, but not found in OSM!".format(node),file=sys.stderr)
     return loc_coords
 
 
 def osmtogeojson_converter(filename):
-    start_time = time.time()
-
     get_all_coordinates(filename)
 
     feature_collection = []
@@ -49,11 +46,10 @@ def osmtogeojson_converter(filename):
         geojson.dump(geojson_file, outfile)
     outfile.close()
 
+
+def is_geojson_valid(geojson_file):
     validation = geojson.is_valid(geojson_file)
-    print("is geoJSON valid?", validation['valid'])
-
-    print("time: {}".format(time.time() - start_time))
-
+    return validation['valid']
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

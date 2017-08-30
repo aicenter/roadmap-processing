@@ -1,13 +1,12 @@
-from __future__ import division, print_function
+from __future__ import division
 import math
 import geojson
 import codecs
 import sys
 import argparse
-from utils import err_print
 
 
-def execute(input_stream, output_stream):
+def calculate_curvature(input_stream, output_stream):
     json_dict = load_geojson(input_stream)
     analyse_roads(json_dict)
     save_geojson(output_stream, json_dict)
@@ -85,13 +84,11 @@ def calculate_curvature(coords):
 
 
 def load_geojson(in_stream):
-    err_print("loading file...")
     json_dict = geojson.load(in_stream)
     return json_dict
 
 
 def analyse_roads(json_dict):
-    err_print("processing...")
     for item in json_dict['features']:
         cur = calculate_curvature(item['geometry']['coordinates'])
         item['properties']['curvature'] = cur[0]
@@ -99,7 +96,6 @@ def analyse_roads(json_dict):
 
 
 def save_geojson(out_stream, json_dict):
-    err_print("saving file...")
     geojson.dump(json_dict, out_stream)
 
 
@@ -121,6 +117,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    execute(input_stream, output_stream)
+    calculate_curvature(input_stream, output_stream)
     input_stream.close()
     output_stream.close()

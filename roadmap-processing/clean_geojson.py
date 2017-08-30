@@ -2,22 +2,14 @@ from __future__ import print_function
 import geojson
 import codecs
 import copy
-import logging
 import argparse
 import sys
-from utils import err_print
 
-logger = logging.getLogger('OSM_errors')
 set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel', 'traffic_calming', 'lanes:forward', 'lanes:backward'}
 dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str, 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int, 'lanes:backward': int}
 
 
-def execute(input_stream, output_stream):
-    hdlr = logging.FileHandler('data/log.log')
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr)
-    logger.setLevel(logging.WARNING)  # warnings and worse
+def clean_geojson(input_stream, output_stream):
     json_dict = load_file(input_stream)
     fill_new_geojson_with_deleted_items(json_dict)
     prune_geojson_file(json_dict)
@@ -33,7 +25,6 @@ def remove_properties(item):
 
 
 def load_file(in_stream):
-    err_print("loading file...")
     json_dict = geojson.load(in_stream)
     return json_dict
 
@@ -75,10 +66,6 @@ def get_single_pair_of_coords(coord_u, coord_v, new_item, id, is_forward):
     return new_item
 
 
-def write_to_log(value, property, type, id):
-    logger.warning('\"%s\" should be %s in %s, id_edge: %d', str(value), type, property, id)
-
-
 def check_types(item):
     for prop in dict_of_useful_properties:
         if prop in item['properties'] and not isinstance(item['properties'][prop], dict_of_useful_properties[prop]):
@@ -93,22 +80,16 @@ def check_types(item):
                     else:
                         int(item['properties'][prop])
                 except:
-                    # warnings += "\"{}\" should be integer in {}\n".format(item['properties'][prop],prop)
-                    write_to_log(item['properties'][prop], prop, "integer", item['id'])
                     del item['properties'][prop]
             elif dict_of_useful_properties[prop] == str:
                 try:
                     str(item['properties'][prop])
                 except:
-                    # warnings += "\"{}\" should be string in {}\n".format(item['properties'][prop],prop)
-                    write_to_log(item['properties'][prop], prop, "string", item['id'])
                     del item['properties'][prop]
             elif dict_of_useful_properties[prop] == int:
                 try:
                     int(item['properties'][prop])
                 except:
-                    # warnings += "\"{}\" should be long in {}\n".format(item['properties'][prop],prop)
-                    write_to_log(item['properties'][prop], prop, "long", item['id'])
                     del item['properties'][prop]
             elif dict_of_useful_properties[prop] == float:
                 try:
@@ -124,13 +105,10 @@ def check_types(item):
                     else:
                         float(item['properties'][prop])
                 except:
-                    # warnings += "\"{}\" should be float in {}\n".format(item['properties'][prop],prop)
-                    write_to_log(item['properties'][prop], prop, "float", item['id'])
                     del item['properties'][prop]
 
 
 def prune_geojson_file(json_dict):
-    err_print("processing...")
     id_iterator = 0
     length = len(json_dict['features'])
 
@@ -167,7 +145,6 @@ def prune_geojson_file(json_dict):
 
 
 def save_geojson_file(out_stream, json_dict):
-    err_print("saving file...")
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     geojson.dump(json_dict, out_stream)
 
@@ -190,6 +167,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    execute(input_stream, output_stream)
+    clean_geojson(input_stream, output_stream)
     input_stream.close()
     output_stream.close()
