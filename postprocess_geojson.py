@@ -46,7 +46,8 @@ def is_geojson_valid(json_dict):
 def export_points_to_geojson(g):
     err_print("exporting points...")
     list_of_features = []
-    for n, _ in g.adjacency_iter():
+    #for n, _ in g.adjacency_iter():
+    for n in g.nodes_iter():
         node_id = get_nodeID(n)
         point = Point(n)
         feature = Feature(geometry=point, properties={'node_id': node_id})

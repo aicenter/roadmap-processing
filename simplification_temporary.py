@@ -5,6 +5,7 @@ import codecs
 from simplify_graph import load_file, prepare_to_saving_optimized, save_file_to_geojson, simplify_graph
 import copy
 import geojson
+from postprocess_geojson import export_points_to_geojson
 
 
 ##udelat komponenty a detekce vice hran mezi 2 nody
@@ -23,7 +24,7 @@ def traverse_and_create_graph(g, subgraph):
 def get_nodeID(node_id):  # return String
     lon = int(node_id[0] * 10 ** 6)
     lat = int(node_id[1] * 10 ** 6)
-    return str(lon) + str(lat)
+    return  str(lat) + str(lon)
 
 
 def find_max_id(json_dict):
@@ -34,6 +35,8 @@ def find_max_id(json_dict):
             max_id = item['properties']['id']
     return max_id
 
+def get_node_for_exporting(node):
+    return (node[0], node[1])  # order lonlat
 
 def get_node(node):
     return (node[1], node[0])  # order latlon
@@ -192,6 +195,25 @@ json_dict['features'].extend(temp_features)
 # with open('data/output-points.geojson', 'w') as outfile:
 #     geojson.dump(json_dict_with_points, outfile)
 # outfile.close()
+
+temp_graph = nx.MultiDiGraph()
+for item in json_dict['features']:
+    coords = item['geometry']['coordinates']
+    u = get_node_for_exporting(coords[0])
+    v = get_node_for_exporting(coords[-1])
+    # print coords
+    # print u,v
+    temp_graph.add_edge(u,v)
+
+export_points_to_geojson(temp_graph)
+# print nx.number_of_nodes(temp_graph)
+#
+# for node in temp_graph.nodes_iter():
+#     print node
+#     node_id = get_nodeID(node)
+#     print node_id
+#     point = Point(node)
+#     print point
 
 f = open("data/output-test.geojson", 'w')
 save_file_to_geojson(json_dict, f)
