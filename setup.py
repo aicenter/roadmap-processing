@@ -1,18 +1,18 @@
 from setuptools import setup
-from pip.req import parse_requirements
+#from pip.req import parse_requirements
 
-install_reqs = parse_requirements("requirements.txt")
+#install_reqs = parse_requirements("requirements.txt",session='hack')
 
-reqs = [str(ir.req) for ir in install_reqs]
+#reqs = [str(ir.req) for ir in install_reqs]
 
 setup(
-   name='roadmap-processing',
-   version='0.1',
+   name='roadmaptools',
+   version='0.1.1',
    description='OSM and geoJSON tools',
    author='Martin Korytak',
    author_email='cbudrud@gmail.com',
-   packages=['roadmap-processing'],
-   url = 'https://github.com/peterldowns/mypackage', # change this
-   download_url = 'https://github.com/peterldowns/mypackage/archive/0.1.tar.gz', # change this
-   install_requires=reqs,
+   packages=['roadmaptools'],
+   url = 'https://github.com/aicenter/roadmap-processing',
+   download_url = 'https://github.com/aicenter/roadmap-processing/archive/0.1.1.tar.gz',
+   install_requires=['osmread','setuptools','networkx','geojson','pip'],
 )

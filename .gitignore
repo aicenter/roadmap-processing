@@ -1,0 +1,6 @@
+#IDE
+.idea
+#PyPI
+.eggs/
+dist/
+roadmaptools.egg-info/
