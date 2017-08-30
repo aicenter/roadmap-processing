@@ -118,8 +118,8 @@ def cut_edges_off(item, id_iterator, json_dict):
             first_edge = second_edge
 
     line_string = LineString(coordinates=coords[last_node:len(coords)])
-    feature = Feature(geometry=line_string, id=id_iterator, properties=item['properties'])
-    return feature
+    feature = Feature(geometry=line_string, id=id_iterator + 1, properties=item['properties'])
+    return [feature, id_iterator + 1]
 
 
 def simplify_curvature(json_dict):
@@ -127,8 +127,9 @@ def simplify_curvature(json_dict):
     id_iterator = length + 1
     for i in range(0, length):
         if len(json_dict['features'][i]['geometry']['coordinates']) > 4:
-            feature = cut_edges_off(json_dict['features'][i], id_iterator, json_dict)
-            id_iterator += 1
+            res = cut_edges_off(json_dict['features'][i], id_iterator, json_dict)
+            feature = res[0]
+            id_iterator = res[1] + 1
             json_dict['features'].append(feature)
             json_dict['features'][i].clear()
 
@@ -149,17 +150,18 @@ def simplify_oneways(n, g, check_lanes):
             g.remove_edge(edge_u[1], edge_u[0])
             g.remove_edge(edge_v[0], edge_v[1])
             g.remove_node(n)
-    elif edge_u == edge_v and hash_list_of_lists_and_compare(g.in_edges(n, data=True)[0][2]['others'],g.out_edges(n, data=True)[0][2]['others']):
+    elif edge_u == edge_v and hash_list_of_lists_and_compare(g.in_edges(n, data=True)[0][2]['others'], g.out_edges(n, data=True)[0][2]['others']):
         if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
             g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
             g.remove_edge(edge_u[1], edge_u[0])
             g.remove_edge(edge_v[0], edge_v[1])
             g.remove_node(n)
 
-def hash_list_of_lists_and_compare(list1,list2):
+
+def hash_list_of_lists_and_compare(list1, list2):
     temp_hash1 = [tuple(i) for i in list1]
     temp_hash2 = [tuple(i) for i in list2]
-    return set(temp_hash1)!=set(temp_hash2)
+    return set(temp_hash1) != set(temp_hash2)
 
 
 def simplify_twoways(n, g, check_lanes):
@@ -208,8 +210,10 @@ def simplify_twoways(n, g, check_lanes):
         if is_deleted[0] == True and is_deleted[1] == True or check_lanes:
             g.remove_node(n)
 
+
 def check_oneway_loop(edge):
-    return edge[0]==edge[1]
+    return edge[0] == edge[1]
+
 
 def prepare_to_saving_optimized(g, json_dict):
     list_of_edges = list(g.edges_iter(data=True))
