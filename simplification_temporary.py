@@ -1,10 +1,11 @@
 from __future__ import division
-from geojson import LineString, Feature
+from geojson import LineString, Feature, Point, FeatureCollection
 import networkx as nx
 import codecs
 from simplify_graph import load_file, prepare_to_saving_optimized, save_file_to_geojson, simplify_graph
 import copy
-import numpy as np
+import geojson
+
 
 ##udelat komponenty a detekce vice hran mezi 2 nody
 
@@ -17,6 +18,12 @@ def traverse_and_create_graph(g, subgraph):
                     for key, d in keydict.items():
                         temp_g.add_edge(n, nbr, id=d['id'], others=d['others'], lanes=d['lanes'])
     return temp_g
+
+
+def get_nodeID(node_id):  # return String
+    lon = int(node_id[0] * 10 ** 6)
+    lat = int(node_id[1] * 10 ** 6)
+    return str(lon) + str(lat)
 
 
 def find_max_id(json_dict):
@@ -50,7 +57,6 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
     # print edge
     for item in json_dict['features']:
         if edge[0]['id'] == item['properties']['id']:
-            #print "yes"
             if len(edge[0]['others']) > 0:
                 line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
                 edge[0]['others'].append(edge[2])
@@ -67,13 +73,13 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
                 temp_features.append(feature2)
                 break
             else:
-                #must be added new point
+                # must be added new point
                 # y = a*x + b
-                #print edge[1],edge[2]
-                x = (edge[1][0]+edge[2][0])/2
-                y = (edge[1][1]+edge[2][1])/2
-                #print x,y
-                edge[0]['others']=[[x,y]]
+                # print edge[1],edge[2]
+                x = (edge[1][0] + edge[2][0]) / 2
+                y = (edge[1][1] + edge[2][1]) / 2
+                # print x,y
+                edge[0]['others'] = [[x, y]]
                 line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
                 edge[0]['others'].append(edge[2])
                 line_string2 = LineString(coordinates=edge[0]['others'])
@@ -89,8 +95,6 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
                 temp_features.append(feature1)
                 temp_features.append(feature2)
                 break
-
-
 
 
 def load_graph(json_dict):
@@ -117,7 +121,7 @@ f.close()
 
 graph = load_graph(json_dict)
 biggest_subgraph = set()
-#print "before:", len(graph.edges())
+# print "before:", len(graph.edges())
 if not nx.is_strongly_connected(graph):
     maximum_number_of_nodes = -1
     for subgraph in nx.strongly_connected_components(graph):
@@ -138,16 +142,14 @@ detect_parallel_edges(new_graph)
 temp_features = list()
 
 id_iter = find_max_id(json_dict) + 1  # new id iterator
-#print id_iter
+# print id_iter
 
-#print(temp_edges)
+# print(temp_edges)
 for edge in temp_edges:
     add_new_edges(json_dict, edge, id_iter)
     id_iter += 2
 
-
-
-#json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+# json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
 prepare_to_saving_optimized(new_graph, json_dict)
 # for item in json_dict['features']:
 #     print item
@@ -171,7 +173,25 @@ json_dict['features'].extend(temp_features)
 # for item in json_dict['features']:
 #     print item
 
-# nefunguje :(((((((((((((((((((((((
+# g = nx.MultiDiGraph()
+# for item in json_dict['features']:
+#     coord = item['geometry']['coordinates']
+#     coord_u = get_node(coord[0])
+#     coord_v = get_node(coord[-1])
+#     g.add_edge(coord_u, coord_v)
+#
+# list_of_features = []
+# for n, _ in g.adjacency_iter():
+#     node_id = get_nodeID(n)
+#     point = Point(n)
+#     feature = Feature(geometry=point, properties={'node_id': node_id})
+#     list_of_features.append(feature)
+#
+# json_dict_with_points = FeatureCollection(features=list_of_features)
+#
+# with open('data/output-points.geojson', 'w') as outfile:
+#     geojson.dump(json_dict_with_points, outfile)
+# outfile.close()
 
 f = open("data/output-test.geojson", 'w')
 save_file_to_geojson(json_dict, f)
