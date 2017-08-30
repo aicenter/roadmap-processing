@@ -1,9 +1,10 @@
+from __future__ import division
 from geojson import LineString, Feature
 import networkx as nx
 import codecs
 from simplify_graph import load_file, prepare_to_saving_optimized, save_file_to_geojson, simplify_graph
 import copy
-
+import numpy as np
 
 ##udelat komponenty a detekce vice hran mezi 2 nody
 
@@ -50,20 +51,46 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
     for item in json_dict['features']:
         if edge[0]['id'] == item['properties']['id']:
             #print "yes"
-            line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
-            edge[0]['others'].append(edge[2])
-            line_string2 = LineString(coordinates=edge[0]['others'])
+            if len(edge[0]['others']) > 0:
+                line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
+                edge[0]['others'].append(edge[2])
+                line_string2 = LineString(coordinates=edge[0]['others'])
 
-            feature1 = Feature(geometry=line_string1, properties=copy.deepcopy(item['properties']))
-            feature1['properties']['id'] = new_id
-            feature2 = Feature(geometry=line_string2, properties=copy.deepcopy(item['properties']))
-            feature2['properties']['id'] = new_id + 1
-            # print new_id
-            # print feature1
-            # print feature2
-            temp_features.append(feature1)
-            temp_features.append(feature2)
-            break
+                feature1 = Feature(geometry=line_string1, properties=copy.deepcopy(item['properties']))
+                feature1['properties']['id'] = new_id
+                feature2 = Feature(geometry=line_string2, properties=copy.deepcopy(item['properties']))
+                feature2['properties']['id'] = new_id + 1
+                # print new_id
+                # print feature1
+                # print feature2
+                temp_features.append(feature1)
+                temp_features.append(feature2)
+                break
+            else:
+                #must be added new point
+                # y = a*x + b
+                #print edge[1],edge[2]
+                x = (edge[1][0]+edge[2][0])/2
+                y = (edge[1][1]+edge[2][1])/2
+                #print x,y
+                edge[0]['others']=[[x,y]]
+                line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
+                edge[0]['others'].append(edge[2])
+                line_string2 = LineString(coordinates=edge[0]['others'])
+
+                feature1 = Feature(geometry=line_string1, properties=copy.deepcopy(item['properties']))
+                feature1['properties']['id'] = new_id
+                feature2 = Feature(geometry=line_string2, properties=copy.deepcopy(item['properties']))
+                feature2['properties']['id'] = new_id + 1
+                # print new_id
+                # print new_id
+                # print feature1
+                # print feature2
+                temp_features.append(feature1)
+                temp_features.append(feature2)
+                break
+
+
 
 
 def load_graph(json_dict):
