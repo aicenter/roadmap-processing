@@ -6,12 +6,17 @@ import sys
 import argparse
 
 
-def execute_id_maker_and_export_nodes(input_stream, output_stream, formated):
+def create_unique_ids(input_stream, output_stream, formated):
     json_dict = load_geojson(input_stream)
-    graph = load_graph(json_dict)
-    export_points_to_geojson(graph)
-    postprocessing_file(json_dict)
+    # graph = load_graph(json_dict)
+    # export_points_to_geojson(graph)
+    get_ids(json_dict)
     save_geojson(json_dict, output_stream, formated)
+
+
+def get_geojson_with_unique_ids(json_dict):
+    get_ids(json_dict)
+    return json_dict
 
 
 def get_node(node):
@@ -33,9 +38,10 @@ def load_graph(json_dict):
     return g
 
 
-def export_points_to_geojson(g):
+def export_points_to_geojson(json_dict):
+    g = load_graph(json_dict)
     list_of_features = []
-    #for n, _ in g.adjacency_iter():
+    # for n, _ in g.adjacency_iter():
     for n in g.nodes_iter():
         node_id = get_nodeID(n)
         point = Point(n)
@@ -44,9 +50,10 @@ def export_points_to_geojson(g):
 
     json_dict_with_points = FeatureCollection(features=list_of_features)
 
-    with open('data/output-points.geojson', 'w') as outfile:
-        geojson.dump(json_dict_with_points, outfile)
-    outfile.close()
+    # with open('data/output-points.geojson', 'w') as outfile:
+    #     geojson.dump(json_dict_with_points, outfile)
+    # outfile.close()
+    return json_dict_with_points
 
 
 def get_nodeID(node_id):  # return String
@@ -55,7 +62,7 @@ def get_nodeID(node_id):  # return String
     return str(lon) + str(lat)
 
 
-def postprocessing_file(json_dict):
+def get_ids(json_dict):
     for item in json_dict['features']:
         # item['properties']['length'] = item['properties']['distance_best_guess']
         # item['properties']['speed'] = item['properties']['speed_best_guess']
@@ -99,6 +106,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    execute_id_maker_and_export_nodes(input_stream, output_stream, args.formated)
+    create_unique_ids(input_stream, output_stream, args.formated)
     input_stream.close()
     output_stream.close()

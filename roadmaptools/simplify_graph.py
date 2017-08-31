@@ -2,7 +2,7 @@ from __future__ import print_function
 import geojson
 import networkx as nx
 import codecs
-from calculate_curvature import calculate_curvature
+from calculate_curvature import get_curvature
 from geojson import LineString, Feature
 import argparse
 import sys
@@ -18,37 +18,65 @@ thresholds = [0, 0.01, 0.5, 1, 2]
 def simplify(input_stream, output_stream, l_check, c_check, sim):
     check_lanes = not l_check  # true means don't simplify edges with different num of lanes
     check_curvatures = c_check
-    json_dict = load_file(input_stream)
+    json_dict = load_geojson(input_stream)
     graph = load_graph(json_dict)
+    get_simplified_graph(graph, check_lanes)
+    prepare_to_saving_optimized(graph, json_dict)
+    if check_curvatures:
+        simplify_curvature(json_dict)
+        json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     if sim:
+        graph = load_graph_for_sim(json_dict)
         subgraph = get_largest_component(graph)
         graph = traverse_and_create_graph(graph, subgraph)
-    simplify_graph(graph, check_lanes)
-    if sim:
         detect_parallel_edges(graph)
         id_iter = find_max_id(json_dict) + 1  # new id iterator
         for edge in temp_edges:
             add_new_edges(json_dict, edge, id_iter)
             id_iter += 2
-    prepare_to_saving_optimized(graph, json_dict)
-    if sim:
         json_dict['features'].extend(temp_features)
-        export_points_to_geojson(json_dict)
+        json_nodes = export_points_to_geojson(json_dict)
+        save_geojson(json_nodes, output_stream)
+    save_geojson(json_dict, output_stream)
+
+
+def get_simplified_geojson(json_dict, l_check=False, c_check=False, sim=True):
+    check_lanes = not l_check  # true means don't simplify edges with different num of lanes
+    check_curvatures = c_check
+    json_nodes = []
+    graph = load_graph(json_dict)
+    get_simplified_graph(graph, check_lanes)
+    prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
         simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    save_file_to_geojson(json_dict, output_stream)
+    if sim:
+        graph = load_graph_for_sim(json_dict)
+        subgraph = get_largest_component(graph)
+        graph = traverse_and_create_graph(graph, subgraph)
+        detect_parallel_edges(graph)
+        id_iter = find_max_id(json_dict) + 1  # new id iterator
+        for edge in temp_edges:
+            add_new_edges(json_dict, edge, id_iter)
+            id_iter += 2
+        json_dict['features'].extend(temp_features)
+        json_nodes = export_points_to_geojson(json_dict)
+    return [json_dict, json_nodes]
 
 
-def export_nodes(json_dict):
-    temp_graph = nx.MultiDiGraph()
+def load_graph_for_sim(json_dict):
+    g = nx.MultiDiGraph()
     for item in json_dict['features']:
-        coords = item['geometry']['coordinates']
-        u = get_node_for_exporting(coords[0])
-        v = get_node_for_exporting(coords[-1])
-        temp_graph.add_edge(u, v)
-
-    export_points_to_geojson(temp_graph)
+        coord = item['geometry']['coordinates']
+        coord_u = get_node(coord[0])
+        coord_v = get_node(coord[-1])
+        if coord_u != coord_v or len(coord) != 2:  # prune loops without any purpose, save loops like traffic roundabout
+            lanes = item['properties']['lanes']
+            data = item['geometry']['coordinates'][1:-1]
+            if len(data) == 0:
+                data = []
+            g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=data, lanes=lanes)
+    return g
 
 
 def get_node_for_exporting(node):
@@ -168,7 +196,7 @@ def try_find(id):
         return [True]
 
 
-def load_file(in_stream):
+def load_geojson(in_stream):
     json_dict = geojson.load(in_stream)
     return json_dict
 
@@ -185,7 +213,7 @@ def load_graph(json_dict):
     return g
 
 
-def simplify_graph(g, check_lanes):
+def get_simplified_graph(g, check_lanes):
     for n, _ in g.adjacency_iter():
         if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
             simplify_oneways(n, g, check_lanes)
@@ -215,8 +243,8 @@ def cut_edges_off(item, id_iterator, json_dict):
             end = True
         else:
             second_edge = coords[i - 1:i + 2]
-        res1 = calculate_curvature(first_edge)
-        res2 = calculate_curvature(second_edge)
+        res1 = get_curvature(first_edge)
+        res2 = get_curvature(second_edge)
         u = get_threshold(res1[0])
         v = get_threshold(res2[0])
         if u != v:
@@ -351,7 +379,7 @@ def prepare_to_saving_optimized(g, json_dict):
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
 
 
-def save_file_to_geojson(json_dict, out_stream):
+def save_geojson(json_dict, out_stream):
     geojson.dump(json_dict, out_stream)
 
 

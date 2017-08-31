@@ -1,9 +1,9 @@
-from __future__ import print_function
 from osmread import parse_file, Node, Way
 import geojson
 from geojson import Point, LineString, Feature, FeatureCollection
 import argparse
 import sys
+import codecs
 
 dict_of_coords = dict()
 
@@ -20,11 +20,12 @@ def get_coords_of_edge(nodes):
         try:
             loc_coords.append(dict_of_coords[node])
         except:
-            print("this node_id {} is required, but not found in OSM!".format(node),file=sys.stderr)
+            # print("this node_id {} is required, but not found in OSM!".format(node),file=sys.stderr)
+            pass
     return loc_coords
 
 
-def osmtogeojson_converter(filename):
+def convert_osmtogeojson(filename):
     get_all_coordinates(filename)
 
     feature_collection = []
@@ -42,19 +43,37 @@ def osmtogeojson_converter(filename):
 
     geojson_file = FeatureCollection(feature_collection)
 
-    with open('data/output.geojson', 'w') as outfile:
-        geojson.dump(geojson_file, outfile)
-    outfile.close()
+    # with open('data/output.geojson', 'w') as outfile:
+    #     geojson.dump(geojson_file, outfile)
+    # outfile.close()
+    return geojson_file
 
 
 def is_geojson_valid(geojson_file):
     validation = geojson.is_valid(geojson_file)
     return validation['valid']
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('map', type=str, help="map in OSM format")
-    parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
-    arg = parser.parse_args()
+def save_geojson(json_dict,out_stream):
+    geojson.dump(json_dict, out_stream)
 
-    osmtogeojson_converter(arg.map)
+def get_args():
+    parser = argparse.ArgumentParser()
+#    parser.add_argument('map', type=str, help="map in OSM format")
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
+    parser.add_argument('-i', dest="input", type=str, action='store', help='input file')
+    parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    args = get_args()
+    output_stream = sys.stdout
+
+    if args.input is not None:
+        input_stream = codecs.open(args.input, encoding='utf8')
+    else:
+        exit(1)
+    if args.output is not None:
+        output_stream = codecs.open(args.output, 'w')
+
+    geojson_file = convert_osmtogeojson(args.input)
+    save_geojson(geojson_file,output_stream)

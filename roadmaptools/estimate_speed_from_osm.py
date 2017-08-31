@@ -5,23 +5,29 @@ import sys
 import argparse
 
 
-def execute(input_stream, output_stream):
-    json_dict = load_file(input_stream)
-    get_speed(json_dict)
+def estimate_speeds(input_stream, output_stream):
+    json_dict = load_geojson(input_stream)
+    get_speeds(json_dict)
     save_geojson(output_stream, json_dict)
 
 
-def load_file(in_stream):
+def get_geojson_with_speeds(json_dict):
+    get_speeds(json_dict)
+    return json_dict
 
+
+def load_geojson(in_stream):
     json_dict = geojson.load(in_stream)
     return json_dict
 
 
-def get_speed(json_dict):
+def get_speeds(json_dict):
     for item in json_dict['features']:
         if 'maxspeed' not in item['properties']:
             if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
                 item['properties']['speed'] = 130
+            elif item['properties']['highway'] == 'living_street':  # for czechia
+                item['properties']['speed'] = 20
             else:
                 item['properties']['speed'] = 50
         else:
@@ -50,6 +56,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    execute(input_stream, output_stream)
+    estimate_speeds(input_stream, output_stream)
     input_stream.close()
     output_stream.close()

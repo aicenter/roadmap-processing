@@ -12,6 +12,11 @@ def calculate_curvature(input_stream, output_stream):
     save_geojson(output_stream, json_dict)
 
 
+def get_geojson_with_curvature(json_dict):
+    analyse_roads(json_dict)
+    return json_dict
+
+
 def get_node(node):  # latlon
     return (node[1], node[0])
 
@@ -52,7 +57,7 @@ def get_length(coords):
     return length
 
 
-def calculate_curvature(coords):
+def get_curvature(coords):
     if len(coords) < 3:
         return [0, 0]  # no curvature on edge
     else:
@@ -90,7 +95,7 @@ def load_geojson(in_stream):
 
 def analyse_roads(json_dict):
     for item in json_dict['features']:
-        cur = calculate_curvature(item['geometry']['coordinates'])
+        cur = get_curvature(item['geometry']['coordinates'])
         item['properties']['curvature'] = cur[0]
         item['properties']['max_curvature'] = cur[1]
 

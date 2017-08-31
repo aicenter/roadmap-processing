@@ -10,10 +10,15 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 
 
 def clean_geojson(input_stream, output_stream):
-    json_dict = load_file(input_stream)
-    #fill_new_geojson_with_deleted_items(json_dict)
+    json_dict = load_geojson(input_stream)
+    # get_geojson_with_deleted_features(json_dict)
     prune_geojson_file(json_dict)
-    save_geojson_file(output_stream, json_dict)
+    save_geojson(output_stream, json_dict)
+
+
+def get_cleaned_geojson(json_dict):
+    prune_geojson_file(json_dict)
+    return json_dict
 
 
 def remove_properties(item):
@@ -24,12 +29,12 @@ def remove_properties(item):
     return item
 
 
-def load_file(in_stream):
+def load_geojson(in_stream):
     json_dict = geojson.load(in_stream)
     return json_dict
 
 
-def fill_new_geojson_with_deleted_items(json_dict):
+def get_geojson_with_deleted_features(json_dict):
     json_deleted = dict()
     json_deleted['type'] = json_dict['type']
     json_deleted['features'] = list()
@@ -38,9 +43,10 @@ def fill_new_geojson_with_deleted_items(json_dict):
         if item['geometry']['type'] != 'LineString':
             json_deleted['features'].append(item)
 
-    with codecs.open("data/deleted_items.geojson", 'w') as output:
-        geojson.dump(json_deleted, output)
-    output.close()
+    # with codecs.open("data/deleted_items.geojson", 'w') as output:
+    #     geojson.dump(json_deleted, output)
+    # output.close()
+    return json_deleted
 
 
 def get_single_pair_of_coords(coord_u, coord_v, new_item, id, is_forward):
@@ -144,7 +150,7 @@ def prune_geojson_file(json_dict):
         item.clear()
 
 
-def save_geojson_file(out_stream, json_dict):
+def save_geojson(out_stream, json_dict):
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     geojson.dump(json_dict, out_stream)
 

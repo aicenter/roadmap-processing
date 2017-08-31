@@ -4,3 +4,5 @@
 .eggs/
 dist/
 roadmaptools.egg-info/
+#compiled files
+*.pyc
