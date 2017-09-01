@@ -62,7 +62,15 @@ pip install roadmaptools
 
 Almost in every script there are two ways how to run it or get resulting geoJSON.
 
-####
+####osmtogeojson
+
+```python
+   geojson_file = osmtogeojson.convert_osmtogeojson("path/to/OSMfile.osm")
+   osmtogeojson.is_geojson_valid(geojson_file)
+   f = open("path/to/savefile.geojson","w")
+   osmtogeojson.save_geojson(geojson_file,f)
+   f.close()
+```
 
 First of all, check your versions of required packages
 
