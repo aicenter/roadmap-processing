@@ -1,4 +1,3 @@
-from __future__ import print_function
 import geojson
 import codecs
 import copy
@@ -12,13 +11,14 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 def clean_geojson(input_stream, output_stream):
     json_dict = load_geojson(input_stream)
     json_deleted = get_geojson_with_deleted_features(json_dict)
-    #save_geojson(output_stream, json_deleted)
+    # save_geojson(output_stream, json_deleted)
     prune_geojson_file(json_dict)
-    save_geojson(output_stream, json_dict)
+    save_geojson(json_dict, output_stream)
 
 
 def get_cleaned_geojson(json_dict):
     prune_geojson_file(json_dict)
+    json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     return json_dict
 
 
@@ -151,7 +151,7 @@ def prune_geojson_file(json_dict):
         item.clear()
 
 
-def save_geojson(out_stream, json_dict):
+def save_geojson(json_dict, out_stream):
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     geojson.dump(json_dict, out_stream)
 

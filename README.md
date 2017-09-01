@@ -62,13 +62,46 @@ pip install roadmaptools
 
 Almost in every script there are two ways how to run it or get resulting geoJSON.
 
-####osmtogeojson
+osmtogeojson
 
 ```python
+   from roadmaptools import osmtogejson
+
    geojson_file = osmtogeojson.convert_osmtogeojson("path/to/OSMfile.osm")
-   osmtogeojson.is_geojson_valid(geojson_file)
-   f = open("path/to/savefile.geojson","w")
+   osmtogeojson.is_geojson_valid(geojson_file) # return 'yes' or 'no'
+   f = open("path/to/output_file.geojson","w")
    osmtogeojson.save_geojson(geojson_file,f)
+   f.close()
+```
+
+clean_geojson
+
+```python
+   from roadmaptools import clean_geojson
+
+   f = open("path/to/input_file.geojson","r")
+   geojson_file = clean_geojson.load_geojson(f)
+   f.close()
+   geojson_unused = clean_geojson.get_geojson_with_deleted_features(geojson_file) # Points and Polygons etc.
+   geojson_out = clean_geojson.get_cleaned_geojson(geojson_file)
+   f = open("path/to/savefile.geojson","w")
+   clean_geojson.save_geojson(geojson_out,f)
+   f.close()
+```
+
+simplify_graph
+
+```python
+   from roadmaptools import simplify_graph
+
+   f = open("path/to/input_file.geojson","r")
+   geojson_file = simplify_graph.load_geojson(f)
+   f.close()
+   thrs = simplify_graph.thresholds # optional
+   simplify_graph.thresholds = [0,1,2] # optional
+   geojson_out = simplify_graph.get_simplified_geojson(geojson_file) # (optional arguments) l_check - > set True to do not simplify roads with same number of lanes, c_check -> set True to do not simplify roads with different curvature
+   f = open("path/to/savefile.geojson","w")
+   simplify_graph.save_geojson(geojson_out,f)
    f.close()
 ```
 
