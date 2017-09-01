@@ -11,7 +11,8 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 
 def clean_geojson(input_stream, output_stream):
     json_dict = load_geojson(input_stream)
-    # get_geojson_with_deleted_features(json_dict)
+    json_deleted = get_geojson_with_deleted_features(json_dict)
+    #save_geojson(output_stream, json_deleted)
     prune_geojson_file(json_dict)
     save_geojson(output_stream, json_dict)
 

@@ -6,178 +6,38 @@ from calculate_curvature import get_curvature
 from geojson import LineString, Feature
 import argparse
 import sys
-import copy
-from export_nodes_and_id_maker import export_points_to_geojson
 
 temp_dict = dict()
-temp_features = list()
-temp_edges = list()
 thresholds = [0, 0.01, 0.5, 1, 2]
 
 
-def simplify(input_stream, output_stream, l_check, c_check, sim):
+def simplify(input_stream, output_stream, l_check, c_check):
     check_lanes = not l_check  # true means don't simplify edges with different num of lanes
     check_curvatures = c_check
     json_dict = load_geojson(input_stream)
     graph = load_graph(json_dict)
-    get_simplified_graph(graph, check_lanes)
+    simplify_graph(graph, check_lanes)
     prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
         simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    if sim:
-        graph = load_graph_for_sim(json_dict)
-        subgraph = get_largest_component(graph)
-        graph = traverse_and_create_graph(graph, subgraph)
-        detect_parallel_edges(graph)
-        id_iter = find_max_id(json_dict) + 1  # new id iterator
-        for edge in temp_edges:
-            add_new_edges(json_dict, edge, id_iter)
-            id_iter += 2
-        json_dict['features'].extend(temp_features)
-        json_nodes = export_points_to_geojson(json_dict)
-        save_geojson(json_nodes, output_stream)
     save_geojson(json_dict, output_stream)
 
 
-def get_simplified_geojson(json_dict, l_check=False, c_check=False, sim=True):
+def get_simplified_geojson(json_dict, l_check=False, c_check=False):
     check_lanes = not l_check  # true means don't simplify edges with different num of lanes
     check_curvatures = c_check
-    json_nodes = []
     graph = load_graph(json_dict)
-    get_simplified_graph(graph, check_lanes)
+    simplify_graph(graph, check_lanes)
     prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
         simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    if sim:
-        graph = load_graph_for_sim(json_dict)
-        subgraph = get_largest_component(graph)
-        graph = traverse_and_create_graph(graph, subgraph)
-        detect_parallel_edges(graph)
-        id_iter = find_max_id(json_dict) + 1  # new id iterator
-        for edge in temp_edges:
-            add_new_edges(json_dict, edge, id_iter)
-            id_iter += 2
-        json_dict['features'].extend(temp_features)
-        json_nodes = export_points_to_geojson(json_dict)
-    return [json_dict, json_nodes]
-
-
-def load_graph_for_sim(json_dict):
-    g = nx.MultiDiGraph()
-    for item in json_dict['features']:
-        coord = item['geometry']['coordinates']
-        coord_u = get_node(coord[0])
-        coord_v = get_node(coord[-1])
-        if coord_u != coord_v or len(coord) != 2:  # prune loops without any purpose, save loops like traffic roundabout
-            lanes = item['properties']['lanes']
-            data = item['geometry']['coordinates'][1:-1]
-            if len(data) == 0:
-                data = []
-            g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=data, lanes=lanes)
-    return g
-
-
-def get_node_for_exporting(node):
-    return (node[0], node[1])  # order lonlat
-
-
-def get_largest_component(graph):
-    biggest_subgraph = graph
-
-    if not nx.is_strongly_connected(graph):
-        maximum_number_of_nodes = -1
-        for subgraph in nx.strongly_connected_components(graph):
-            if len(subgraph) > maximum_number_of_nodes:
-                maximum_number_of_nodes = len(subgraph)
-                biggest_subgraph = subgraph
-    return biggest_subgraph
-
-
-def traverse_and_create_graph(g, subgraph):
-    temp_g = nx.MultiDiGraph()
-    for n, nbrsdict in g.adjacency_iter():
-        if n in subgraph:
-            for nbr, keydict in nbrsdict.items():
-                if nbr in subgraph:
-                    for key, d in keydict.items():
-                        temp_g.add_edge(n, nbr, id=d['id'], others=d['others'], lanes=d['lanes'])
-    return temp_g
-
-
-def detect_parallel_edges(g):
-    set_of_edges = set()
-    for n, nbrsdict in g.adjacency_iter():
-        for nbr, keydict in nbrsdict.items():
-            for key, d in keydict.items():
-                if key != 0:
-                    if (n, nbr) in set_of_edges:
-                        temp_edges.append((g[n][nbr][key], get_node_reversed(n), get_node_reversed(nbr), True))
-                    else:
-                        set_of_edges.add((nbr, n))  # add the second direction to set!!
-                        temp_edges.append((g[n][nbr][key], get_node_reversed(n), get_node_reversed(nbr), False))
-                    g.remove_edge(n, nbr, key)
-
-
-def find_max_id(json_dict):
-    max_id = -1
-    for item in json_dict['features']:
-        if item['properties']['id'] > max_id:
-            max_id = item['properties']['id']
-    return max_id
-
-
-def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necessary, because it's made automatically before saving
-    for item in json_dict['features']:
-        if edge[0]['id'] == item['properties']['id']:
-            if len(edge[0]['others']) > 0:
-                if edge[3] == True:
-                    edge[0]['others'].insert(0, edge[1])
-                    line_string1 = LineString(coordinates=(edge[0]['others']))
-                    line_string2 = LineString(coordinates=(edge[0]['others'][-1], edge[2]))
-                else:
-                    line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
-                    edge[0]['others'].append(edge[2])
-                    line_string2 = LineString(coordinates=edge[0]['others'])
-
-                feature1 = Feature(geometry=line_string1, properties=copy.deepcopy(item['properties']))
-                feature1['properties']['id'] = new_id
-                feature2 = Feature(geometry=line_string2, properties=copy.deepcopy(item['properties']))
-                feature2['properties']['id'] = new_id + 1
-                temp_features.append(feature1)
-                temp_features.append(feature2)
-                break
-            else:
-                # must be added new point
-                # y = a*x + b
-                x = (edge[1][0] + edge[2][0]) / 2
-                y = (edge[1][1] + edge[2][1]) / 2
-                edge[0]['others'] = [[x, y]]
-                if edge[3] == True:
-                    edge[0]['others'].insert(0, edge[1])
-                    line_string1 = LineString(coordinates=(edge[0]['others']))
-                    line_string2 = LineString(coordinates=(edge[0]['others'][-1], edge[2]))
-                else:
-                    line_string1 = LineString(coordinates=(edge[1], edge[0]['others'][0]))
-                    edge[0]['others'].append(edge[2])
-                    line_string2 = LineString(coordinates=edge[0]['others'])
-
-                feature1 = Feature(geometry=line_string1, properties=copy.deepcopy(item['properties']))
-                feature1['properties']['id'] = new_id
-                feature2 = Feature(geometry=line_string2, properties=copy.deepcopy(item['properties']))
-                feature2['properties']['id'] = new_id + 1
-                temp_features.append(feature1)
-                temp_features.append(feature2)
-                break
+    return json_dict
 
 
 def get_node(node):
     return (node[1], node[0])  # order latlon
-
-
-def get_node_reversed(node):
-    return [node[1], node[0]]  # latlon
 
 
 def try_find(id):
@@ -213,7 +73,7 @@ def load_graph(json_dict):
     return g
 
 
-def get_simplified_graph(g, check_lanes):
+def simplify_graph(g, check_lanes):
     for n, _ in g.adjacency_iter():
         if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
             simplify_oneways(n, g, check_lanes)
@@ -389,7 +249,7 @@ def get_args():
     parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
     parser.add_argument('-lanes', action='store_true', default=False, dest='lanes', help='simplify according lanes')
     parser.add_argument('-cur', action='store_true', default=False, dest='curs', help='simplify according curvatures\' thresholds')
-    parser.add_argument('-sim', action='store_true', default=False, dest='sim', help='simplify according lanes')
+    #    parser.add_argument('-sim', action='store_true', default=False, dest='sim', help='simplify according lanes')
     return parser.parse_args()
 
 
@@ -406,6 +266,6 @@ if __name__ == '__main__':
 
     # l_check set True whether you don't want to simplify edges with different number of lanes
     # c_check set True whether you don't want to simplify edges with different curvature
-    simplify(input_stream, output_stream, l_check=args.lanes, c_check=args.curs, sim=args.sim)
+    simplify(input_stream, output_stream, l_check=args.lanes, c_check=args.curs)
     input_stream.close()
     output_stream.close()
