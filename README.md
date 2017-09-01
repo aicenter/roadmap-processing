@@ -1,10 +1,6 @@
 # roadmap-processing
 
-One Paragraph of project description goes here
-
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+Python's tool for processing mostly geoJSON files and also OSM files. 
 
 ### Prerequisites
 
@@ -47,6 +43,7 @@ or clone with ssh
 ```
 git clone git@github.com:aicenter/roadmap-processing.git
 ```
+
 and finally use
 
 ```
@@ -55,8 +52,17 @@ virtualenv --python path/to/python2.7/interpreter --no-site-packages --distribut
 
 where you subtitute path/to/python2.7/interpreter with your own path to python 2.7 interpreter to create isolated Python environment.
 
+This project is also available on PyPI and it is recommended install it as package
+
+```
+pip install roadmaptools
+```
 
 ## Examples of usage
+
+Almost in every script there are two ways how to run it or get resulting geoJSON.
+
+####
 
 First of all, check your versions of required packages
 
