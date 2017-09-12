@@ -182,11 +182,11 @@ We use [GitHub](https://github.com) for versioning. For the versions available, 
 
 ## Authors
 
-* **Martin Korytak** - *Initial work* - [korytmar](https://github.com/korytmar)
+* **Martin Korytak** - *Initial work*
 
 See also the list of [contributors](https://github.com/aicenter/roadmap-processing/graphs/contributors) who participated in this project.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.txt) file for details
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
 
