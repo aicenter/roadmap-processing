@@ -9,7 +9,7 @@ import argparse
 def calculate_curvature(input_stream, output_stream):
     json_dict = load_geojson(input_stream)
     analyse_roads(json_dict)
-    save_geojson(output_stream, json_dict)
+    save_geojson(json_dict, output_stream)
 
 
 def get_geojson_with_curvature(json_dict):
@@ -100,7 +100,7 @@ def analyse_roads(json_dict):
         item['properties']['max_curvature'] = cur[1]
 
 
-def save_geojson(out_stream, json_dict):
+def save_geojson(json_dict, out_stream):
     geojson.dump(json_dict, out_stream)
 
 

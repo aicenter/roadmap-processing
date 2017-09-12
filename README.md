@@ -82,9 +82,10 @@ clean_geojson
    f = open("path/to/input_file.geojson","r")
    geojson_file = clean_geojson.load_geojson(f)
    f.close()
+
    geojson_unused = clean_geojson.get_geojson_with_deleted_features(geojson_file) # Points and Polygons etc.
    geojson_out = clean_geojson.get_cleaned_geojson(geojson_file)
-   f = open("path/to/savefile.geojson","w")
+   f = open("path/to/output_file.geojson","w")
    clean_geojson.save_geojson(geojson_out,f)
    f.close()
 ```
@@ -97,11 +98,81 @@ simplify_graph
    f = open("path/to/input_file.geojson","r")
    geojson_file = simplify_graph.load_geojson(f)
    f.close()
+
    thrs = simplify_graph.thresholds # optional
    simplify_graph.thresholds = [0,1,2] # optional
    geojson_out = simplify_graph.get_simplified_geojson(geojson_file) # (optional arguments) l_check - > set True to do not simplify roads with same number of lanes, c_check -> set True to do not simplify roads with different curvature
-   f = open("path/to/savefile.geojson","w")
+   f = open("path/to/output_file.geojson","w")
    simplify_graph.save_geojson(geojson_out,f)
+   f.close()
+```
+
+estimate_speed_from_osm
+
+```python
+   from roadmaptools import estimate_speed_from_osm
+
+   f = open("path/to/input_file.geojson","r")
+   geojson_file = estimate_speed_from_osm.load_geojson(f)
+   f.close()
+
+   geojson_out = estimate_speed_from_osm.get_geojson_with_speeds(geojson_file)
+   f = open("path/to/output_file.geojson","w")
+   estimate_speed_from_osm.save_geojson(geojson_out,f)
+   f.close()
+```
+
+calculate_curvature
+
+```python
+   from roadmaptools import calculate_curvature
+
+   f = open("path/to/input_file.geojson","r")
+   geojson_file = calculate_curvature.load_geojson(f)
+   f.close()
+
+   geojson_out = calculate_curvature.get_geojson_with_curvature(geojson_file)
+   f = open("path/to/output_file.geojson","w")
+   calculate_curvature.save_geojson(geojson_out,f)
+   f.close()
+```
+
+export_nodes_and_id_maker
+
+```python
+   from roadmaptools import export_nodes_and_id_maker
+
+   f = open("path/to/input_file.geojson","r")
+   geojson_file = calculate_curvature.load_geojson(f)
+   f.close()
+
+   points = export_nodes_and_id_maker.export_points_to_geojson(geojson_file)
+   f = open("path/to/output_file_nodes.geojson","w")
+   export_nodes_and_id_maker.save_geojson(points,f,is_formated=True) # in this script it is possible to save geojson in read-friendly mode
+   f.close()
+
+   geojson_out = export_nodes_and_id_maker.get_geojson_with_unique_ids(geojson_file)
+   f = open("path/to/output_file_edges.geojson","w")
+   export_nodes_and_id_maker.save_geojson(geojson_out,f,is_formated=False) # False is default
+   f.close()
+```
+
+prepare_geojson_to_agentpolisdemo
+
+```python
+   from roadmaptools import prepare_geojson_to_agentpolisdemo
+
+   f = open("path/to/input_file.geojson","r")
+   geojson_file = prepare_geojson_to_agentpolisdemo.load_geojson(f)
+   f.close()
+
+   geojson_list_out = prepare_geojson_to_agentpolisdemo.get_nodes_and_edges_for_agentpolisdemo(geojson_file) # return [edges, nodes]
+   f = open("path/to/output_file_edges.geojson","w")
+   prepare_geojson_to_agentpolisdemo.save_geojson(geojson_list_out[0],f)
+   f.close()
+
+   f = open("path/to/output_file_nodes.geojson","w")
+   prepare_geojson_to_agentpolisdemo.save_geojson(geojson_list_out[1],f)
    f.close()
 ```
 

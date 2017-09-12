@@ -87,7 +87,7 @@ def get_ids(json_dict):
         item['properties']['to_id'] = to_node_id
 
 
-def save_geojson(json_dict, out_stream, is_formated):
+def save_geojson(json_dict, out_stream, is_formated=False):
     if is_formated == False:
         geojson.dump(json_dict, out_stream)
     else:

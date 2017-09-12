@@ -8,7 +8,7 @@ import argparse
 def estimate_speeds(input_stream, output_stream):
     json_dict = load_geojson(input_stream)
     get_speeds(json_dict)
-    save_geojson(output_stream, json_dict)
+    save_geojson(json_dict, output_stream)
 
 
 def get_geojson_with_speeds(json_dict):
@@ -35,7 +35,7 @@ def get_speeds(json_dict):
         item['properties']['length'] = get_length(item['geometry']['coordinates'])
 
 
-def save_geojson(out_stream, json_dict):
+def save_geojson(json_dict, out_stream):
     geojson.dump(json_dict, out_stream)
 
 

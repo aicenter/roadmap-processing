@@ -209,7 +209,7 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-   # input_stream = codecs.open("/home/martin/MOBILITY/GITHUB/roadmap-processing(ALL-IN-ONE)/data/output-result.geojson", 'r')
+    # input_stream = codecs.open("/home/martin/MOBILITY/GITHUB/roadmap-processing(ALL-IN-ONE)/data/output-result.geojson", 'r')
     prepare_graph_to_agentpolisdemo(input_stream, output_stream)
     input_stream.close()
     output_stream.close()
