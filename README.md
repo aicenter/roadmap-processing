@@ -176,75 +176,17 @@ prepare_geojson_to_agentpolisdemo
    f.close()
 ```
 
-First of all, check your versions of required packages
-
-```
-python install_requirements.py
-```
-
-after that you can simply download your favourite city.
-
-```
-python mapdownloader.py "Barcelona"
-```
-
-You can skip this, if you have own city area and continue with
-
-```
-python run_demo.py map.osm -r
-```
-and your final result is in folder "/data" as "output-final-result.geojson".
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [GitHub](https://github.com) for versioning. For the versions available, see the [tags on this repository](https://github.com/aicenter/roadmap-processing/tags). 
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Martin Korytak** - *Initial work* - [korytmar](https://github.com/korytmar)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/aicenter/roadmap-processing/graphs/contributors) who participated in this project.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.txt) file for details
 
-## Acknowledgments
-
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
