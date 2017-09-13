@@ -62,7 +62,7 @@ pip install roadmaptools
 
 Almost in every script there are two ways how to run it or get resulting geoJSON.
 
-osmtogeojson
+osmtogeojson (description: convert OSM file to geoJSON file)
 
 ```python
    from roadmaptools import osmtogejson
@@ -74,7 +74,7 @@ osmtogeojson
    f.close()
 ```
 
-clean_geojson
+clean_geojson (description: get only LineStrings, where everyone has only 2 coordinates; check important features, whether are meaningful)
 
 ```python
    from roadmaptools import clean_geojson
@@ -90,7 +90,7 @@ clean_geojson
    f.close()
 ```
 
-simplify_graph
+simplify_graph (description: default - create graph, where nodes are only in crossroads; l_check - create graph, where nodes are also in way, where number of lanes is changing; c_check - according to thresholds create graph, where nodes are also in way, where curvature exceeds the threshold)
 
 ```python
    from roadmaptools import simplify_graph
@@ -107,7 +107,7 @@ simplify_graph
    f.close()
 ```
 
-estimate_speed_from_osm
+estimate_speed_from_osm (description: add information about speed from [OSM](http://wiki.openstreetmap.org/wiki/Key:maxspeed), if maxspeed is not available, some heuristics are used)
 
 ```python
    from roadmaptools import estimate_speed_from_osm
@@ -122,7 +122,7 @@ estimate_speed_from_osm
    f.close()
 ```
 
-calculate_curvature
+calculate_curvature (description: add information about curvature, it is calculated from GPS)
 
 ```python
    from roadmaptools import calculate_curvature
@@ -137,7 +137,7 @@ calculate_curvature
    f.close()
 ```
 
-export_nodes_and_id_maker
+export_nodes_and_id_maker (description: create new geoJSON file with all intersections (nodes), generate unique ID for each node and add direction (from node, to node) for each way)
 
 ```python
    from roadmaptools import export_nodes_and_id_maker
@@ -157,7 +157,7 @@ export_nodes_and_id_maker
    f.close()
 ```
 
-prepare_geojson_to_agentpolisdemo
+prepare_geojson_to_agentpolisdemo (description: get the biggest strongly connected component and suppress multiple ways between two nodes (i.e. simplified graph is now broken)
 
 ```python
    from roadmaptools import prepare_geojson_to_agentpolisdemo

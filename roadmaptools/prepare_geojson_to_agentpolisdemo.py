@@ -154,16 +154,17 @@ def prepare_graph_to_agentpolisdemo(input_stream, output_stream):
     graph = load_graph(json_dict)
     biggest_subgraph = get_biggest_component(graph)
     new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-    new_graph = create_DiGraph(new_graph) #smazat
-    simplify_graph(new_graph, False)
+    
+    # simplify_graph(new_graph, False)
+    # new_graph = create_DiGraph(new_graph) #smazat
 
-    # detect_parallel_edges(new_graph)
-    # id_iter = find_max_id(json_dict) + 1  # new id iterator
-    # for edge in temp_edges:
-    #     add_new_edges(json_dict, edge, id_iter)
-    #     id_iter += 2
+    detect_parallel_edges(new_graph)
+    id_iter = find_max_id(json_dict) + 1  # new id iterator
+    for edge in temp_edges:
+        add_new_edges(json_dict, edge, id_iter)
+        id_iter += 2
     prepare_to_saving_optimized(new_graph, json_dict)
-    #json_dict['features'].extend(temp_features)
+    json_dict['features'].extend(temp_features)
    # nodes = export_points_to_geojson(json_dict)
     #print len(json_dict['features'])
    # output_stream = open("/home/martin/MOBILITY/GITHUB/nodes.geojson",'w')
@@ -178,15 +179,17 @@ def get_nodes_and_edges_for_agentpolisdemo(json_dict):
     graph = load_graph(json_dict)
     biggest_subgraph = get_biggest_component(graph)
     new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-    new_graph = create_DiGraph(new_graph)  # smazat
-    simplify_graph(new_graph, False)
-    # detect_parallel_edges(new_graph)
-    # id_iter = find_max_id(json_dict) + 1  # new id iterator
-    # for edge in temp_edges:
-    #     add_new_edges(json_dict, edge, id_iter)
-    #     id_iter += 2
+    
+    # simplify_graph(new_graph, False)
+    #new_graph = create_DiGraph(new_graph)  # smazat
+
+    detect_parallel_edges(new_graph)
+    id_iter = find_max_id(json_dict) + 1  # new id iterator
+    for edge in temp_edges:
+        add_new_edges(json_dict, edge, id_iter)
+        id_iter += 2
     prepare_to_saving_optimized(new_graph, json_dict)
-    # json_dict['features'].extend(temp_features)
+    json_dict['features'].extend(temp_features)
     nodes = export_points_to_geojson(json_dict)
     return [json_dict, nodes]
 
