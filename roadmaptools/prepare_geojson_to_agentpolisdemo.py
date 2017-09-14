@@ -4,11 +4,9 @@ import networkx as nx
 import codecs
 from simplify_graph import load_geojson, prepare_to_saving_optimized, save_geojson, simplify_graph
 import copy
-from export_nodes_and_id_maker import export_points_to_geojson
+from export_nodes_and_id_maker import export_points_to_geojson, get_ids
 import sys
 import argparse
-
-##udelat komponenty a detekce vice hran mezi 2 nody
 
 temp_edges = list()
 temp_features = list()
@@ -135,6 +133,7 @@ def get_biggest_component(graph):
                 biggest_subgraph = subgraph
     return biggest_subgraph
 
+
 def create_DiGraph(g):
     # print nx.number_of_nodes(g)
     # print nx.number_of_edges(g)
@@ -142,8 +141,8 @@ def create_DiGraph(g):
     for n, nbrsdict in g.adjacency_iter():
         for nbr, keydict in nbrsdict.items():
             for key, d in keydict.items():
-                #print d
-                temp_gr.add_edge(n,nbr,lanes=d['lanes'],id=d['id'],others=d['others'])
+                # print d
+                temp_gr.add_edge(n, nbr, lanes=d['lanes'], id=d['id'], others=d['others'])
     # print nx.number_of_nodes(temp_gr)
     # print nx.number_of_edges(temp_gr)
     return temp_gr
@@ -154,7 +153,7 @@ def prepare_graph_to_agentpolisdemo(input_stream, output_stream):
     graph = load_graph(json_dict)
     biggest_subgraph = get_biggest_component(graph)
     new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-    
+
     # simplify_graph(new_graph, False)
     # new_graph = create_DiGraph(new_graph) #smazat
 
@@ -165,23 +164,24 @@ def prepare_graph_to_agentpolisdemo(input_stream, output_stream):
         id_iter += 2
     prepare_to_saving_optimized(new_graph, json_dict)
     json_dict['features'].extend(temp_features)
-   # nodes = export_points_to_geojson(json_dict)
-    #print len(json_dict['features'])
-   # output_stream = open("/home/martin/MOBILITY/GITHUB/nodes.geojson",'w')
-   # save_geojson(nodes, output_stream)
-   # output_stream.close()
-   # output_stream = open("/home/martin/MOBILITY/GITHUB/edges.geojson",'w')
+    get_ids(json_dict)
+    nodes = export_points_to_geojson(json_dict)
+    # print len(json_dict['features'])
+    # output_stream = open("/home/martin/MOBILITY/GITHUB/agentpolis-demo/python_scripts/data/nodes.geojson",'w')
+    # save_geojson(nodes, output_stream)
+    # output_stream.close()
+    # output_stream = open("/home/martin/MOBILITY/GITHUB/agentpolis-demo/python_scripts/data/edges.geojson",'w')
     save_geojson(json_dict, output_stream)
-   # output_stream.close()
+    # output_stream.close()
 
 
 def get_nodes_and_edges_for_agentpolisdemo(json_dict):
     graph = load_graph(json_dict)
     biggest_subgraph = get_biggest_component(graph)
     new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-    
+
     # simplify_graph(new_graph, False)
-    #new_graph = create_DiGraph(new_graph)  # smazat
+    # new_graph = create_DiGraph(new_graph)  # smazat
 
     detect_parallel_edges(new_graph)
     id_iter = find_max_id(json_dict) + 1  # new id iterator
@@ -190,6 +190,7 @@ def get_nodes_and_edges_for_agentpolisdemo(json_dict):
         id_iter += 2
     prepare_to_saving_optimized(new_graph, json_dict)
     json_dict['features'].extend(temp_features)
+    get_ids(json_dict)
     nodes = export_points_to_geojson(json_dict)
     return [json_dict, nodes]
 
@@ -212,7 +213,7 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    # input_stream = codecs.open("/home/martin/MOBILITY/GITHUB/roadmap-processing(ALL-IN-ONE)/data/output-result.geojson", 'r')
+    # input_stream = codecs.open("/home/martin/MOBILITY/GITHUB/agentpolis-demo/python_scripts/data/output-result.geojson", 'r')
     prepare_graph_to_agentpolisdemo(input_stream, output_stream)
     input_stream.close()
     output_stream.close()
