@@ -41,7 +41,6 @@ def load_graph(json_dict):
 def export_points_to_geojson(json_dict):
     g = load_graph(json_dict)
     list_of_features = []
-    # for n, _ in g.adjacency_iter():
     for n in g.nodes_iter():
         node_id = get_node_id(n)
         point = Point(n)
@@ -74,10 +73,10 @@ def get_ids(json_dict):
         # item['properties']['length'] = item['properties']['distance_best_guess']
         # item['properties']['speed'] = item['properties']['speed_best_guess']
         # del item['properties']['distance_best_guess']
-        if 'distance_optimistic' in item['properties']:
-            del item['properties']['distance_optimistic']
-        if 'distance_pessimistic' in item['properties']:
-            del item['properties']['distance_pessimistic']
+        # if 'distance_optimistic' in item['properties']:
+        #     del item['properties']['distance_optimistic']
+        # if 'distance_pessimistic' in item['properties']:
+        #     del item['properties']['distance_pessimistic']
 
         from_node = item['geometry']['coordinates'][0]
         to_node = item['geometry']['coordinates'][-1]

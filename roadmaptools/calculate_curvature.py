@@ -34,10 +34,11 @@ def get_distance_between_coords(point1, point2):  # return in meters
     return distance
 
 
+#        C
 #       /\
 #    c /  \ a
 #     /    \
-#     ------
+#   A ----- B
 #       b
 def calculate_angle_in_degree(a, b, c):
     if a + c > b:  # check if it is a triangle
@@ -84,7 +85,6 @@ def get_curvature(coords):
             total_curvature += angle
             length_of_edge += distance
 
-        # length_of_edge = get_length(coords)
         return [total_curvature / length_of_edge, max_curvature]
 
 

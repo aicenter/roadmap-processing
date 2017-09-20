@@ -53,16 +53,19 @@ def is_geojson_valid(geojson_file):
     validation = geojson.is_valid(geojson_file)
     return validation['valid']
 
-def save_geojson(json_dict,out_stream):
+
+def save_geojson(json_dict, out_stream):
     geojson.dump(json_dict, out_stream)
+
 
 def get_args():
     parser = argparse.ArgumentParser()
-#    parser.add_argument('map', type=str, help="map in OSM format")
+    #    parser.add_argument('map', type=str, help="map in OSM format")
     parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
     parser.add_argument('-i', dest="input", type=str, action='store', help='input file')
     parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     args = get_args()
@@ -76,4 +79,4 @@ if __name__ == '__main__':
         output_stream = codecs.open(args.output, 'w')
 
     geojson_file = convert_osmtogeojson(args.input)
-    save_geojson(geojson_file,output_stream)
+    save_geojson(geojson_file, output_stream)

@@ -6,7 +6,6 @@ from geojson import LineString, Feature
 import argparse
 import sys
 
-temp_dict = dict()
 thresholds = [0, 0.01, 0.5, 1, 2]
 
 
@@ -39,7 +38,7 @@ def get_node(node):
     return (node[1], node[0])  # order latlon
 
 
-def try_find(id):
+def try_find(id, temp_dict):
     if id in temp_dict:
         n1 = temp_dict[id]['node'][1]
         n2 = temp_dict[id]['node'][0]
@@ -186,7 +185,7 @@ def simplify_twoways(n, g, check_lanes):
     if edges_u == edges_v:
         # remove edges and node
         is_deleted = [False, False]
-        is_loop = False
+        is_loop = False  # finding oneway loop (from_id == to_id)
         for i in edges_u:
             if check_oneway_loop(i):
                 is_loop = True
@@ -217,6 +216,7 @@ def check_oneway_loop(edge):
 
 def prepare_to_saving_optimized(g, json_dict):
     list_of_edges = list(g.edges_iter(data=True))
+    temp_dict = dict()
 
     for edge in list_of_edges:
         id = edge[2]['id']
@@ -227,7 +227,7 @@ def prepare_to_saving_optimized(g, json_dict):
 
     counter = 0
     for item in json_dict['features']:
-        data = try_find(item['properties']['id'])
+        data = try_find(item['properties']['id'], temp_dict)
         if data[0]:
             counter += 1
             item.clear()
@@ -248,7 +248,6 @@ def get_args():
     parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
     parser.add_argument('-lanes', action='store_true', default=False, dest='lanes', help='simplify according lanes')
     parser.add_argument('-cur', action='store_true', default=False, dest='curs', help='simplify according curvatures\' thresholds')
-    #    parser.add_argument('-sim', action='store_true', default=False, dest='sim', help='simplify according lanes')
     return parser.parse_args()
 
 
