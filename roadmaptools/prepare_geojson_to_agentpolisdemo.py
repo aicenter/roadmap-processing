@@ -188,9 +188,10 @@ def get_nodes_and_edges_for_agentpolisdemo(json_dict):
     json_dict['features'].extend(temp_features)
     get_ids(json_dict)
     nodes = export_points_to_geojson(json_dict)
-    for item in json_dict['features']:
-        if item['properties']['id']==3544:
-            print("grr")
+
+    gr = load_graph(json_dict) # remove duplicated edges
+    gr = create_DiGraph(gr)
+    prepare_to_saving_optimized(gr, json_dict)
     return [json_dict, nodes]
 
 
