@@ -16,7 +16,12 @@ Data output:
     This is with respect to osm wiki.
 
 """
+import argparse
+import codecs
+
 import networkx as nx
+import sys
+
 from roadmaptools import coords, utils
 from math import degrees
 from copy import deepcopy
@@ -47,6 +52,11 @@ number_of_inconsistent_edges = 0
 #
 # PUBLIC
 #
+def get_geojson_with_turn_lanes(json_dict):
+    """Return json dict without logging on error output"""
+    return process(json_dict)
+
+
 def process(json_dict, logging=False):
     """Main function, returns json dict.
      It is better to run this after simplification"""
@@ -358,3 +368,34 @@ class ToJson:
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
 
         return json_dict
+
+
+def __get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1.2')
+    parser.add_argument('-i', dest="input", type=str, action='store', help='input file (.geojson)')
+    parser.add_argument('-o', dest="output", type=str, action='store', help='output file (.geojson)')
+    parser.add_argument('-log', action='store_true', default=False, dest='log', help='Turn log on stderr.')
+    return parser.parse_args()
+
+
+# EXAMPLE OF USAGE
+if __name__ == '__main__':
+    args = __get_args()
+    output_stream = sys.stdout
+    input_stream = sys.stdin
+
+    if args.output is not None:
+        output_stream = codecs.open(args.output, 'w')
+    if args.input is not None:
+        input_stream = codecs.open(args.input, 'r')
+
+    geojson_file = utils.load_geojson(input_stream)
+    if utils.is_geojson_valid(geojson_file):
+        geojson_file = process(geojson_file,args.log)
+        utils.save_geojson(geojson_file, output_stream)
+    else:
+        utils.eprint("Invalid geojson file")
+
+    input_stream.close()
+    output_stream.close()
