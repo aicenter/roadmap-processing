@@ -22,16 +22,14 @@ import codecs
 import networkx as nx
 import sys
 
-from roadmaptools import coords, utils
+from roadmaptools import coords, utils, map_elements
 from math import degrees
 from copy import deepcopy
 
 __author__ = "Zdenek Bousa"
 __email__ = "bousazde@fel.cvut.cz"
 
-road_elements = {'primary', 'secondary', 'motorway', 'trunk', 'tertiary', 'road', 'residential',
-                 'motorway_link', 'trunk_link', 'primary_link', 'secondary_link',
-                 'tertiary_link'}  # Road elements available for lanes direction
+road_elements = map_elements.get_road_elements_agentpolis()  # Road elements available for lanes direction
 
 road_directions = {'sharp_left', 'left', 'slight_left', 'through', 'slight_right', 'right', 'sharp_right',
                    'none'}  # junction
@@ -133,7 +131,13 @@ def __traverse_graph_and_connect(graph):
         # prune nodes by degree
         if degree > 2:  # it has to be junction
             # calculate angles at intersection and fill modified edges
-            __calculate_junction(dict_in_edges[__get_hash(node)], dict_out_edges[__get_hash(node)], modified_edges)
+            try:
+                __calculate_junction(dict_in_edges[__get_hash(node)], dict_out_edges[__get_hash(node)], modified_edges)
+            except KeyError as e:
+                if extend_logging:
+                    utils.eprint("Error: Incorrect node or is not part of road element", str(e), "junction skipped.")
+                else:
+                    pass
     return modified_edges
 
 
@@ -199,14 +203,55 @@ def __rebuild_according_to_lanes(dict_turns_data_parsed, dict_directions):
     """Fill data from dict_directions to dict_turns_data_parsed"""
     for lane in dict_turns_data_parsed:
         for direction in lane.keys():
-            try:
-                lane[direction] = dict_directions[direction]
-            except:
+            if direction is not None:
+                lane[direction] = -1
+                # try default from dict
+                lane[direction] = __try_direction(direction, dict_directions)
+                if lane[direction] != -1:
+                    continue
+
+                #switch left/right
+                switch = None
+                if "right" in str(direction):
+                    switch = "right"
+                elif "left" in str(direction):
+                    switch = "left"
+
+                if switch is not None:
+                    # Normal turn
+                    if direction == str(switch):
+                        lane[direction] = __try_direction("slight_"+str(switch), dict_directions)
+                        if lane[direction] != -1:
+                            continue
+                    if direction == str(switch):
+                        lane[direction] = __try_direction("sharp_"+str(switch), dict_directions)
+                        if lane[direction] != -1:
+                            continue
+                    # Slight
+                    if direction == ("slight_"+str(switch)):
+                        lane[direction] = __try_direction(str(switch), dict_directions)
+                        if lane[direction] != -1:
+                            continue
+                    # Sharp
+                    if direction == ("sharp_"+str(switch)):
+                        lane[direction] = __try_direction(str(switch), dict_directions)
+                        if lane[direction] != -1:
+                            continue
+
+                # Exception
                 if extend_logging:
-                    utils.eprint("Error: Match requested direction with computed")
-                lane[direction] = "none"
+                    utils.eprint("Error: No match for equested direction with computed")
+            else:
+                lane[direction] = -1
 
     return dict_turns_data_parsed
+
+
+def __try_direction(direction, dict_directions):
+    try:
+        return dict_directions[direction]
+    except KeyError:
+        return -1
 
 
 def __calculate_directions(in_edge, out_edges, roundabout):
@@ -392,7 +437,7 @@ if __name__ == '__main__':
 
     geojson_file = utils.load_geojson(input_stream)
     if utils.is_geojson_valid(geojson_file):
-        geojson_file = process(geojson_file,args.log)
+        geojson_file = process(geojson_file, args.log)
         utils.save_geojson(geojson_file, output_stream)
     else:
         utils.eprint("Invalid geojson file")

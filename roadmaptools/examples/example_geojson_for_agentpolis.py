@@ -5,7 +5,7 @@ import codecs
 import sys
 
 from roadmaptools import utils, clean_geojson, prepare_geojson_to_agentpolisdemo, simplify_graph, calculate_curvature, \
-    create_lanes_connections, estimate_speed_from_osm
+    create_lanes_connections, estimate_speed_from_osm, remove_specific_line_elements, map_elements
 
 __author__ = "Zdenek Bousa"
 __email__ = "bousazde@fel.cvut.cz"
@@ -16,9 +16,6 @@ def __get_args():
     parser.add_argument('-i', dest="input", type=str, action='store', help='input file (.geojson)')
     parser.add_argument('-edges', dest="out_edges", type=str, action='store', help='output file - edges (.geojson)')
     parser.add_argument('-nodes', dest="out_nodes", type=str, action='store', help='output file - nodes (.geojson)')
-    parser.add_argument('-lanes', action='store_true', default=False, dest='lanes', help='simplify according lanes')
-    parser.add_argument('-cur', action='store_true', default=False, dest='curs',
-                        help='simplify according curvatures\' thresholds')
     return parser.parse_args()
 
 
@@ -40,20 +37,23 @@ if __name__ == '__main__':
     if utils.is_geojson_valid(input_geojson):
         # Prune
         geojson_data = clean_geojson.get_cleaned_geojson(input_geojson)
+        # Remove LineString that is not road element in Agentpolis
+        geojson_data = remove_specific_line_elements.get_geojson_only_with_elements(geojson_data,
+                                                                                    map_elements.get_road_elements_agentpolis())
         # Simplify - (json_dict, simplify edges with same number of lanes?,not simplify edges with different curvature?)
-        geojson_data = simplify_graph.get_simplified_geojson(geojson_data, args.lanes, args.curs)
+        geojson_data = simplify_graph.get_simplified_geojson(geojson_data, True, False)
         # Estimate speed and length (required properties in graph-importer)
         geojson_data = estimate_speed_from_osm.get_geojson_with_speeds(geojson_data)
         # Calculate curvature
         geojson_data = calculate_curvature.get_geojson_with_curvature(geojson_data)
         # Create lanes connection at each intersection
-        # geojson_data = create_lanes_connections.get_geojson_with_turn_lanes(geojson_data)
-
+        geojson_data = create_lanes_connections.get_geojson_with_turn_lanes(geojson_data)
         # Prepare road network/graph for agentpolis
-        geojson_list_out = prepare_geojson_to_agentpolisdemo.get_nodes_and_edges_for_agentpolisdemo(geojson_data)
+        geojson_data = prepare_geojson_to_agentpolisdemo.get_nodes_and_edges_for_agentpolisdemo(geojson_data)
+
         # save to file
-        utils.save_geojson(geojson_list_out[0], o_edges)
-        utils.save_geojson(geojson_list_out[1], o_nodes)
+        utils.save_geojson_formatted(geojson_data[0], o_edges)
+        utils.save_geojson(geojson_data[1], o_nodes)
     else:
         utils.eprint("Invalid geojson file.")
 
