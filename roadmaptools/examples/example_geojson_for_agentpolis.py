@@ -47,7 +47,7 @@ if __name__ == '__main__':
         # Calculate curvature
         geojson_data = calculate_curvature.get_geojson_with_curvature(geojson_data)
         # Create lanes connection at each intersection
-        geojson_data = create_lanes_connections.get_geojson_with_turn_lanes(geojson_data)
+        # geojson_data = create_lanes_connections.get_geojson_with_turn_lanes(geojson_data)
 
         # Prepare road network/graph for agentpolis
         geojson_list_out = prepare_geojson_to_agentpolisdemo.get_nodes_and_edges_for_agentpolisdemo(geojson_data)
