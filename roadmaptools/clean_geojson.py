@@ -1,4 +1,3 @@
-import geojson
 import codecs
 import copy
 import argparse
@@ -7,7 +6,7 @@ from roadmaptools import utils
 
 # Dict of used properties from geojson + id_opposite (tag for twoway)
 set_of_useful_properties = {'highway', 'id', 'id_opposite', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel',
-                            'traffic_calming', 'turn:lanes', 'junction'}
+                            'traffic_calming', 'turn:lanes', 'turn:lanes:id', 'junction'}
 
 dict_of_useful_properties = {'highway': str, 'id': int, 'id_opposite': int, 'lanes': int, 'maxspeed': int,
                              'oneway': str, 'bridge': str,
