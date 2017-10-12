@@ -6,7 +6,7 @@ from roadmaptools import utils
 
 # Dict of used properties from geojson + id_opposite (tag for twoway)
 set_of_useful_properties = {'highway', 'id', 'id_opposite', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel',
-                            'traffic_calming', 'turn:lanes', 'turn:lanes:id', 'junction'}
+                            'traffic_calming', 'turn:lanes', 'junction'}
 
 dict_of_useful_properties = {'highway': str, 'id': int, 'id_opposite': int, 'lanes': int, 'maxspeed': int,
                              'oneway': str, 'bridge': str,
@@ -20,32 +20,24 @@ DEFAULT_TURN = 'all'
 #   MAIN
 #
 def clean_geojson(input_stream, output_stream):
+    """Prune geojson and save to stream"""
     json_dict = utils.load_geojson(input_stream)
     __prune_geojson_file(json_dict)
     utils.save_geojson(json_dict, output_stream)
 
 
 def get_cleaned_geojson(json_dict):
+    """Prune geojson and return"""
     __prune_geojson_file(json_dict)
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     return json_dict
-
-
-def get_geojson_with_deleted_features(json_dict):
-    json_deleted = dict()
-    json_deleted['type'] = json_dict['type']
-    json_deleted['features'] = list()
-
-    for item in json_dict['features']:
-        if item['geometry']['type'] != 'LineString':
-            json_deleted['features'].append(item)
-    return json_deleted
 
 
 #
 #   PRIVATE
 #
 def __prune_geojson_file(json_dict):
+    """main prune function"""
     id_iterator = 0
     length = len(json_dict['features'])
 
@@ -61,7 +53,9 @@ def __prune_geojson_file(json_dict):
                 new_item = __get_single_pair_of_coords(u, v, temp, id_iterator, True)
                 json_dict['features'].append(new_item)
                 if 'oneway' in item['properties']:
-                    if item['properties']['oneway'] != 'yes':
+                    if item['properties']['oneway'] != 'yes':  # == twoway
+                        id_iterator += 1
+
                         # mark twoway
                         json_dict['features'][(length + id_iterator - 1)]['properties']['id_opposite'] = id_iterator
                         previous_id = json_dict['features'][(length + id_iterator - 1)]['properties']['id']
@@ -84,6 +78,9 @@ def __prune_geojson_file(json_dict):
                         # item['properties']['oneway'] = 'yes'
                         id_iterator += 1
                         continue
+
+                    id_iterator += 1
+
                     # mark twoway
                     json_dict['features'][(length + id_iterator - 1)]['properties']['id_opposite'] = id_iterator
                     previous_id = json_dict['features'][(length + id_iterator - 1)]['properties']['id']
@@ -101,6 +98,7 @@ def __prune_geojson_file(json_dict):
 
 
 def __prune_properties(item):
+    """Remove useless properties, based on set_of_useful_properties"""
     temp_dict_with_props = copy.deepcopy(item['properties'])
     for prop in temp_dict_with_props:
         if prop not in set_of_useful_properties:
@@ -108,42 +106,7 @@ def __prune_properties(item):
     return item
 
 
-def __get_single_pair_of_coords(coord_u, coord_v, new_item, id, is_forward):
-    new_item['properties']['id'] = id  # linear
-
-    # remove and create coordinates in correct order
-    del new_item['geometry']['coordinates']
-    new_item['geometry']['coordinates'] = [coord_u, coord_v]
-
-    # check number of lanes with oneway
-    if ('oneway' in new_item['properties'] and new_item['properties']['oneway'] != 'yes') \
-            or ('oneway' not in new_item['properties']):
-        if 'lanes:forward' in new_item['properties'] and is_forward:
-            new_item['properties']['lanes'] = int(new_item['properties']['lanes:forward'])
-        elif 'lanes:backward' in new_item['properties'] and not is_forward:
-            new_item['properties']['lanes'] = int(new_item['properties']['lanes:backward'])
-        elif is_forward and 'lanes' in new_item['properties']:
-            new_item['properties']['lanes'] = int(new_item['properties']['lanes']) - 1
-        elif not is_forward and 'lanes' in new_item['properties']:
-            new_item['properties']['lanes'] = DEFAULT_NUMBER_OF_LANES
-    # default lanes
-    if 'lanes' not in new_item['properties'] or new_item['properties']['lanes'] < 1:
-        new_item['properties']['lanes'] = DEFAULT_NUMBER_OF_LANES
-
-    # check lanes heading with oneway
-    if ('oneway' in new_item['properties'] and new_item['properties']['oneway'] != 'yes') \
-            or ('oneway' not in new_item['properties']):
-        if 'turn:lanes:forward' in new_item['properties'] and is_forward:
-            new_item['properties']['turn:lanes'] = str(new_item['properties']['turn:lanes:forward'])
-        elif 'turn:lanes:backward' in new_item['properties'] and not is_forward:
-            new_item['properties']['turn:lanes'] = str(new_item['properties']['turn:lanes:backward'])
-
-    # mark oneway
-    new_item['properties']['oneway'] = 'yes'
-
-    return new_item
-
-
+#
 def __check_types(item):
     for prop in dict_of_useful_properties:
         if prop in item['properties'] and not isinstance(item['properties'][prop], dict_of_useful_properties[prop]):
@@ -184,6 +147,43 @@ def __check_types(item):
                         float(item['properties'][prop])
                 except:
                     del item['properties'][prop]
+
+
+#
+def __get_single_pair_of_coords(coord_u, coord_v, new_item, id, is_forward):
+    new_item['properties']['id'] = id  # linear
+
+    # remove and create coordinates in correct order
+    del new_item['geometry']['coordinates']
+    new_item['geometry']['coordinates'] = [coord_u, coord_v]
+
+    # check number of lanes with oneway
+    if ('oneway' in new_item['properties'] and new_item['properties']['oneway'] != 'yes') \
+            or ('oneway' not in new_item['properties']):
+        if 'lanes:forward' in new_item['properties'] and is_forward:
+            new_item['properties']['lanes'] = int(new_item['properties']['lanes:forward'])
+        elif 'lanes:backward' in new_item['properties'] and not is_forward:
+            new_item['properties']['lanes'] = int(new_item['properties']['lanes:backward'])
+        elif is_forward and 'lanes' in new_item['properties']:
+            new_item['properties']['lanes'] = int(new_item['properties']['lanes']) - 1
+        elif not is_forward and 'lanes' in new_item['properties']:
+            new_item['properties']['lanes'] = DEFAULT_NUMBER_OF_LANES
+    # default lanes
+    if 'lanes' not in new_item['properties'] or new_item['properties']['lanes'] < 1:
+        new_item['properties']['lanes'] = DEFAULT_NUMBER_OF_LANES
+
+    # check lanes heading with oneway
+    if ('oneway' in new_item['properties'] and new_item['properties']['oneway'] != 'yes') \
+            or ('oneway' not in new_item['properties']):
+        if 'turn:lanes:forward' in new_item['properties'] and is_forward:
+            new_item['properties']['turn:lanes'] = str(new_item['properties']['turn:lanes:forward'])
+        elif 'turn:lanes:backward' in new_item['properties'] and not is_forward:
+            new_item['properties']['turn:lanes'] = str(new_item['properties']['turn:lanes:backward'])
+
+    # mark oneway
+    new_item['properties']['oneway'] = 'yes'
+
+    return new_item
 
 
 def __get_args():
