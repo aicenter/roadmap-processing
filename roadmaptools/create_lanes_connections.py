@@ -178,7 +178,10 @@ def __calculate_junction(list_in_edges, list_out_edges, modified_edges):
                     if out_e[3] == tag_roundabout:
                         through_id = out_e[2]
                         list_out_edges.remove(out_e)
-                        list_of_directions.remove('through')
+                        try:
+                            list_of_directions.remove('through')
+                        except ValueError:
+                            list_of_directions.remove('slight_left')
                         roundabout = True
                         break
 
