@@ -20,7 +20,10 @@ def get_geojson_only_with_elements(json_dict, to_keep_dict):
 def _prune(json_dict, elements_dict, boolean_keep):
     for item in json_dict['features']:
         if item['geometry']['type'] == 'LineString':
-            highway = item['properties']['highway']
+            try:
+                highway = item['properties']['highway']
+            except:
+                highway = None
             if boolean_keep and highway is not None and highway in elements_dict:
                 continue
             elif not boolean_keep and highway not in elements_dict:

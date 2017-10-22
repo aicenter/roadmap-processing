@@ -52,7 +52,7 @@ if __name__ == '__main__':
         geojson_data = prepare_geojson_to_agentpolisdemo.get_nodes_and_edges_for_agentpolisdemo(geojson_data)
 
         # save to file
-        utils.save_geojson_formatted(geojson_data[0], o_edges)
+        utils.save_geojson(geojson_data[0], o_edges)
         utils.save_geojson(geojson_data[1], o_nodes)
     else:
         utils.eprint("Invalid geojson file.")
