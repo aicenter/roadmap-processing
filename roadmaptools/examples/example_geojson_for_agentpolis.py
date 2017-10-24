@@ -4,6 +4,8 @@ import codecs
 
 import sys
 
+import time
+
 from roadmaptools import utils, clean_geojson, prepare_geojson_to_agentpolisdemo, simplify_graph, calculate_curvature, \
     create_lanes_connections, estimate_speed_from_osm, remove_specific_line_elements, map_elements
 
@@ -30,6 +32,7 @@ if __name__ == '__main__':
     o_edges = codecs.open(args.out_edges, 'w')
     o_nodes = codecs.open(args.out_nodes, 'w')
 
+    start_time = time.time()
     # Load data
     input_geojson = utils.load_geojson(input_stream)
 
@@ -47,7 +50,9 @@ if __name__ == '__main__':
         # Calculate curvature
         geojson_data = calculate_curvature.get_geojson_with_curvature(geojson_data)
         # Create lanes connection at each intersection
-        geojson_data = create_lanes_connections.get_geojson_with_turn_lanes(geojson_data)
+        connect_lanes = create_lanes_connections
+        geojson_data = connect_lanes.get_geojson_with_turn_lanes(geojson_data)
+        connect_lanes.print_statistics()
         # Prepare road network/graph for agentpolis
         geojson_data = prepare_geojson_to_agentpolisdemo.get_nodes_and_edges_for_agentpolisdemo(geojson_data)
 
@@ -56,6 +61,8 @@ if __name__ == '__main__':
         utils.save_geojson(geojson_data[1], o_nodes)
     else:
         utils.eprint("Invalid geojson file.")
+
+    print("--- %s seconds ---" % (time.time() - start_time))
 
     input_stream.close()
     o_nodes.close()

@@ -43,8 +43,16 @@ tag_highway = 'highway'
 tag_roundabout = 'roundabout'
 extend_logging = False
 
-# Internal variables
-number_of_inconsistent_edges = 0
+# Statistics
+statistics_number_of_road_elements = 0
+statistics_number_of_turn_lanes_tags = 0
+statistics_number_of_inconsistent_edges = 0
+
+statistics_number_of_road_edges = 0
+statistics_number_of_processed_lanes = 0
+statistics_number_of_processed_edges = 0
+statistics_number_of_erroneously_processed_edges = 0
+statistics_number_of_erroneously_processed_lanes = 0
 
 
 #
@@ -65,10 +73,27 @@ def process(json_dict, logging=False):
     return ToJson.graph_to_json(data, json_dict)
 
 
+def print_statistics():
+    print ("Number of road elements: " + str(statistics_number_of_road_elements))
+    print ("Number of available edges with turn:lanes tag: " + str(statistics_number_of_turn_lanes_tags))
+    print ("Number of inconsistent edges(number of lanes differs): " + str(statistics_number_of_inconsistent_edges))
+    print ("=========================================================================")
+    print ("Number of road elements ending at junction: " + str(statistics_number_of_road_edges))
+    print ("Number of road elements processed and connected at intersection: " + str(
+        statistics_number_of_processed_edges))
+    print ("Number of road elements erroneously processed: " + str(statistics_number_of_erroneously_processed_edges))
+    print ("Number of connected lanes: " + str(statistics_number_of_processed_lanes))
+    print ("Number of not connected lanes (due to internal error): " + str(
+        statistics_number_of_erroneously_processed_lanes))
+
+
 def get_number_of_inconsistent_edges():
-    return number_of_inconsistent_edges
+    return statistics_number_of_inconsistent_edges
 
 
+#
+# Private
+#
 def __load_graph(json_dict):
     """Load graph from json dict with id,lanes,turn:lanes + all data
 
@@ -76,6 +101,7 @@ def __load_graph(json_dict):
     1. By road_elements (try to connect only them)
     2. By degree of node, prune only with degree > 2
     """
+    global statistics_number_of_road_elements
     g = nx.MultiDiGraph()
     for item in json_dict['features']:
         coord = item['geometry']['coordinates']
@@ -87,6 +113,7 @@ def __load_graph(json_dict):
             junction = ItemProperties.get_junction(item)
             highway = ItemProperties.get_highway(item)
             if highway in road_elements:  # prune non-road elements
+                statistics_number_of_road_elements += 1
                 g.add_edge(coord_u, coord_v, id=item['properties'][tag_id], lanes=lanes, lanes_turn=lanes_turn,
                            junction=junction, highway=highway)
 
@@ -105,6 +132,7 @@ def __traverse_graph_and_connect(graph):
 
     Return list of modified edges
     """
+    global statistics_number_of_erroneously_processed_edges
     # create dictionary with junction node (from node) as a key + coords,junction,turn_lanes
     dict_out_edges = dict()
     for e in graph.out_edges(data=True):
@@ -134,6 +162,7 @@ def __traverse_graph_and_connect(graph):
             try:
                 __calculate_junction(dict_in_edges[__get_hash(node)], dict_out_edges[__get_hash(node)], modified_edges)
             except KeyError as e:
+                statistics_number_of_erroneously_processed_edges += 1
                 if extend_logging:
                     utils.eprint("Error: Incorrect node or is not part of road element", str(e), "junction skipped.")
                 else:
@@ -143,11 +172,15 @@ def __traverse_graph_and_connect(graph):
 
 def __calculate_junction(list_in_edges, list_out_edges, modified_edges):
     """"""
-    global number_of_inconsistent_edges
+    global statistics_number_of_inconsistent_edges, statistics_number_of_turn_lanes_tags, \
+        statistics_number_of_road_edges, statistics_number_of_processed_edges
+    statistics_number_of_road_edges += len(list_in_edges)
     for in_e in list_in_edges:
         if in_e[2] is None:  # no turn lanes available for this in_edge
             continue  # continue to next incoming edge to the node
         else:  # turn lanes available
+            statistics_number_of_turn_lanes_tags += 1
+
             in_e = deepcopy(in_e)
             list_out_edges = deepcopy(list_out_edges)
             # Incoming edge
@@ -166,7 +199,7 @@ def __calculate_junction(list_in_edges, list_out_edges, modified_edges):
             if len(turns_data_parsed) != e_number_of_lanes:
                 # update number of lanes
                 e_number_of_lanes = len(turns_data_parsed)
-                number_of_inconsistent_edges += 1
+                statistics_number_of_inconsistent_edges += 1
                 if extend_logging:
                     utils.eprint("Inconsistent data in edge: " + str(e_id))
             through_id = -1
@@ -199,21 +232,25 @@ def __calculate_junction(list_in_edges, list_out_edges, modified_edges):
 
             # Append to changelist
             modified_edges.append(modified_edge)
+
+    statistics_number_of_processed_edges = len(modified_edges)
     return modified_edges
 
 
 def __rebuild_according_to_lanes(dict_turns_data_parsed, dict_directions):
     """Fill data from dict_directions to dict_turns_data_parsed"""
+    global statistics_number_of_processed_lanes, statistics_number_of_erroneously_processed_lanes
     for lane in dict_turns_data_parsed:
+        statistics_number_of_processed_lanes += 1
         for direction in lane.keys():
-            if direction is not None:
+            if direction is not None and not "none":
                 lane[direction] = -1
                 # try default from dict
                 lane[direction] = __try_direction(direction, dict_directions)
                 if lane[direction] != -1:
                     continue
 
-                #switch left/right
+                # switch left/right
                 switch = None
                 if "right" in str(direction):
                     switch = "right"
@@ -223,27 +260,28 @@ def __rebuild_according_to_lanes(dict_turns_data_parsed, dict_directions):
                 if switch is not None:
                     # Normal turn
                     if direction == str(switch):
-                        lane[direction] = __try_direction("slight_"+str(switch), dict_directions)
+                        lane[direction] = __try_direction("slight_" + str(switch), dict_directions)
                         if lane[direction] != -1:
                             continue
                     if direction == str(switch):
-                        lane[direction] = __try_direction("sharp_"+str(switch), dict_directions)
+                        lane[direction] = __try_direction("sharp_" + str(switch), dict_directions)
                         if lane[direction] != -1:
                             continue
                     # Slight
-                    if direction == ("slight_"+str(switch)):
+                    if direction == ("slight_" + str(switch)):
                         lane[direction] = __try_direction(str(switch), dict_directions)
                         if lane[direction] != -1:
                             continue
                     # Sharp
-                    if direction == ("sharp_"+str(switch)):
+                    if direction == ("sharp_" + str(switch)):
                         lane[direction] = __try_direction(str(switch), dict_directions)
                         if lane[direction] != -1:
                             continue
 
                 # Exception
+                statistics_number_of_erroneously_processed_lanes += 1
                 if extend_logging:
-                    utils.eprint("Error: No match for equested direction with computed")
+                    utils.eprint("Error: No match for requested direction with computed")
             else:
                 lane[direction] = -1
 
@@ -278,24 +316,26 @@ def __calculate_directions(in_edge, out_edges, roundabout):
         # Straight and reverse
         if ((-160 >= a >= -180) or (180 >= a >= 160)) and not roundabout:  # through
             dict_directions_id['through'] = dict_angle[a]
-        elif -20 <= a <= 20:  # turn back
+        elif -10 <= a <= 10:  # turn back
             dict_directions_id['reverse'] = dict_angle[a]
+
         # Roundabout
         elif roundabout and (-180 <= a <= -20):  # roundabout exit right
             dict_directions_id['right'] = dict_angle[a]
         elif roundabout and (180 >= a >= 20):  # roundabout exit left
             dict_directions_id['left'] = dict_angle[a]
+
         # Right
         elif -160 < a < -140:  # slight right
             dict_directions_id['slight_right'] = dict_angle[a]
-        elif -40 < a < -20:  # sharp right
+        elif -40 < a < -10:  # sharp right
             dict_directions_id['sharp_right'] = dict_angle[a]
         elif -140 <= a <= -40:  # right
             dict_directions_id['right'] = dict_angle[a]
         # Left
         elif 160 > a > 140:  # slight left
             dict_directions_id['slight_left'] = dict_angle[a]
-        elif 40 > a > 20:  # sharp left
+        elif 40 > a > 10:  # sharp left
             dict_directions_id['sharp_left'] = dict_angle[a]
         elif 140 >= a >= 40:  # left
             dict_directions_id['left'] = dict_angle[a]
