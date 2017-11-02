@@ -38,21 +38,20 @@ def load_graph(json_dict):
     return g
 
 
-def export_points_to_geojson(json_dict):
-    g = load_graph(json_dict)
+def export_nodes_in_geojson(graph):
     list_of_features = []
-    for n in g.nodes_iter():
+    for n in graph.nodes_iter():
         node_id = get_node_id(n)
         point = Point(n)
         feature = Feature(geometry=point, properties={'node_id': node_id})
         list_of_features.append(feature)
 
-    json_dict_with_points = FeatureCollection(features=list_of_features)
+    return FeatureCollection(features=list_of_features)
 
-    # with open('data/output-points.geojson', 'w') as outfile:
-    #     geojson.dump(json_dict_with_points, outfile)
-    # outfile.close()
-    return json_dict_with_points
+
+def export_points_to_geojson(json_dict):
+    g = load_graph(json_dict)
+    return export_nodes_in_geojson(g)
 
 
 def get_node_id(node_id):  # return String
