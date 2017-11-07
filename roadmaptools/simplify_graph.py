@@ -1,23 +1,52 @@
 import geojson
 import networkx as nx
 import codecs
-from calculate_curvature import get_curvature
+from roadmaptools.calculate_curvature import get_curvature
 from geojson import LineString, Feature
 import argparse
 import sys
+import time
+
+from roadmaptools.init import config
+from roadmaptools.printer import print_info
 
 thresholds = [0, 0.01, 0.5, 1, 2]
+
+
+def simplify_geojson():
+    input_file = config.cleaned_geojson_file
+    output_file = config.simplified_file
+    print_info('Simplifying geoJSON')
+    start_time = time.time()
+
+    input_stream = codecs.open(input_file, encoding='utf8')
+    output_stream = open(output_file, 'w')
+
+    # l_check set True whether you don't want to simplify edges with different number of lanes
+    # c_check set True whether you don't want to simplify edges with different curvature
+    print_info("Loading geojson file from: {}".format(input_file))
+    geojson_file = load_geojson(input_stream)
+
+    print_info("Simplification process started")
+    geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)
+
+    print_info("Saving file to: {}".format(output_file))
+    save_geojson(geojson_out, output_stream)
+    input_stream.close()
+    output_stream.close()
+
+    print_info('Simplification completed. (%.2f secs)' % (time.time() - start_time))
 
 
 def simplify(input_stream, output_stream, l_check, c_check):
     check_lanes = not l_check  # true means don't simplify edges with different num of lanes
     check_curvatures = c_check
     json_dict = load_geojson(input_stream)
-    graph = load_graph(json_dict)
+    graph = _load_graph(json_dict)
     simplify_graph(graph, check_lanes)
     prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
-        simplify_curvature(json_dict)
+        _simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     save_geojson(json_dict, output_stream)
 
@@ -25,11 +54,11 @@ def simplify(input_stream, output_stream, l_check, c_check):
 def get_simplified_geojson(json_dict, l_check=False, c_check=False):
     check_lanes = not l_check  # true means don't simplify edges with different num of lanes
     check_curvatures = c_check
-    graph = load_graph(json_dict)
+    graph = _load_graph(json_dict)
     simplify_graph(graph, check_lanes)
     prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
-        simplify_curvature(json_dict)
+        _simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
     return json_dict
 
@@ -59,7 +88,7 @@ def load_geojson(in_stream):
     return json_dict
 
 
-def load_graph(json_dict):
+def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
     g = nx.MultiDiGraph()
     for item in json_dict['features']:
         coord = item['geometry']['coordinates']
@@ -71,7 +100,7 @@ def load_graph(json_dict):
     return g
 
 
-def simplify_graph(g, check_lanes):
+def simplify_graph(g: nx.MultiDiGraph, check_lanes):
     for n, _ in g.adjacency_iter():
         if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
             simplify_oneways(n, g, check_lanes)
@@ -90,7 +119,7 @@ def get_threshold(curvature):
     return counter  # bigger then last interval
 
 
-def cut_edges_off(item, id_iterator, json_dict):
+def _cut_edges_off(item, id_iterator, json_dict):
     coords = item['geometry']['coordinates']
     first_edge = coords[0:3]
     end = False
@@ -121,12 +150,12 @@ def cut_edges_off(item, id_iterator, json_dict):
     return [feature, id_iterator + 1]
 
 
-def simplify_curvature(json_dict):
+def _simplify_curvature(json_dict):
     length = len(json_dict['features'])
     id_iterator = length + 1
     for i in range(0, length):
         if len(json_dict['features'][i]['geometry']['coordinates']) > 4:
-            res = cut_edges_off(json_dict['features'][i], id_iterator, json_dict)
+            res = _cut_edges_off(json_dict['features'][i], id_iterator, json_dict)
             feature = res[0]
             id_iterator = res[1] + 1
             json_dict['features'].append(feature)
