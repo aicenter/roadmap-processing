@@ -52,7 +52,7 @@ def extract_file(filename: str):
 		for data in iter(lambda: file.read(block_size), b''):
 			new_file.write(data)
 			uncompressed_size += block_size
-			print_info("\rDecompressing - decompressed size: {:,}B".format(uncompressed_size).replace(",", " "), end='', flush=False)
+			print_info("\rDecompressing - decompressed size: {:,}B".format(uncompressed_size).replace(",", " "), end='')
 	uncompressed_size = os.path.getsize(new_filename)
 	print_info("\nExtraction finished: uncompressed size: {:,}B".format(uncompressed_size).replace(",", " "))
 

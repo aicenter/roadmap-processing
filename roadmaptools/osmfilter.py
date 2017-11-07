@@ -28,7 +28,7 @@ def filter_osm_file():
 		print_info('Osmfilter not available. Exiting.')
 		exit(1)
 
-	print_info('done. (%.2f secs)' % (time.time() - start_time))
+	print_info('Filtering finished. (%.2f secs)' % (time.time() - start_time))
 
 
 def check_osmfilter():

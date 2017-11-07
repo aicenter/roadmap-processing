@@ -3,8 +3,8 @@ import sys
 from datetime import datetime
 
 
-def print_info(info, file=sys.stdout):
-    print("[{0}]: {1}".format(datetime.now().time(), info), file=file)
+def print_info(info, file=sys.stdout, end="\n", flush=False):
+    print("[{0}]: {1}".format(datetime.now().strftime('%H:%M:%S'), info), file=file, end=end, flush=flush)
 
 
 def print_err(info):
