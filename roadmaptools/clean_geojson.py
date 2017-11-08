@@ -157,7 +157,6 @@ def prune_geojson_file(json_dict):
 			item = remove_properties(item)
 			check_types(item)
 			for j in range(0, len(item['geometry']['coordinates']) - 1):
-			# for j in range(0, len(item['geometry']['coordinates']) - 1):
 				temp = copy.deepcopy(item)
 				u = item['geometry']['coordinates'][j]
 				v = item['geometry']['coordinates'][j + 1]
