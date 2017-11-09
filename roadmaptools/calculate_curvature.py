@@ -4,6 +4,34 @@ import geojson
 import codecs
 import sys
 import argparse
+import time
+
+from roadmaptools.printer import print_info
+from roadmaptools.init import config
+
+
+def compute_edge_curvatures():
+    input_filename = config.simplified_file_with_speed
+    output_filename = config.simplified_file_with_speed_and_curvature
+
+    print_info('Computing average edge curvatures.')
+    start_time = time.time()
+
+    input_stream = codecs.open(input_filename, encoding='utf8')
+    output_stream = open(output_filename, 'w')
+
+    print_info("Loading geojson from: {}".format(input_filename))
+    geojson_file = load_geojson(input_stream)
+
+    print_info("Calculating curvature")
+    geojson_out = get_geojson_with_curvature(geojson_file)
+
+    print_info("Saving geojson to: {}".format(output_filename))
+    save_geojson(geojson_out, output_stream)
+    input_stream.close()
+    output_stream.close()
+
+    print_info('Curvature computation process finished. (%.2f secs)' % (time.time() - start_time))
 
 
 def calculate_curvature(input_stream, output_stream):

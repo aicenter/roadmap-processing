@@ -1,8 +1,36 @@
 import geojson
 import codecs
-from calculate_curvature import get_length
+from roadmaptools.calculate_curvature import get_length
 import sys
 import argparse
+import time
+
+from roadmaptools.printer import print_info
+from roadmaptools.init import config
+
+
+def estimate_travel_speed():
+    input_filename = config.simplified_file
+    output_filename = config.simplified_file_with_speed
+    print_info('Estimating travel speed')
+    start_time = time.time()
+
+    input_stream = codecs.open(input_filename, encoding='utf8')
+    output_stream = open(output_filename, 'w')
+
+    print_info("Loading file from: {}".format(input_filename))
+    geojson_file = load_geojson(input_stream)
+
+    print_info("Computing speed")
+    geojson_out = get_geojson_with_speeds(geojson_file)
+
+    print_info("Saving file to: {}".format(output_filename))
+    save_geojson(geojson_out, output_stream)
+    input_stream.close()
+    output_stream.close()
+
+    print_info('Speed estimation completed. (%.2f secs)' % (time.time() - start_time))
+
 
 
 def estimate_speeds(input_stream, output_stream):
