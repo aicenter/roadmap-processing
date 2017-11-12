@@ -101,11 +101,11 @@ def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
 
 
 def simplify_graph(g: nx.MultiDiGraph, check_lanes):
-	for n, _ in list(g.adjacency_iter()):
+	for n, _ in list(g.adjacency()):
 		if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
 			simplify_oneways(n, g, check_lanes)
 
-	for n, _ in list(g.adjacency_iter()):
+	for n, _ in list(g.adjacency()):
 		if g.out_degree(n) == 2 and g.in_degree(n) == 2:  # both directions in highway
 			simplify_twoways(n, g, check_lanes)
 
@@ -163,15 +163,15 @@ def _simplify_curvature(json_dict):
 
 
 def simplify_oneways(n, g, check_lanes):
-	edge_u = g.out_edges(n, data=True)[0][:2]
+	edge_u = list(g.out_edges(n, data=True))[0][:2]
 	temp = reversed(edge_u)
 	edge_u = tuple(temp)
-	edge_v = g.in_edges(n, data=True)[0][:2]
-	new_id = g.out_edges(n, data=True)[0][2]['id']
-	coords = list(filter(None, g.in_edges(n, data=True)[0][2]['others'] + [[n[1], n[0]]]
-				+ g.out_edges(n, data=True)[0][2]['others']))
-	lanes_u = g.out_edges(n, data=True)[0][2]['lanes']
-	lanes_v = g.in_edges(n, data=True)[0][2]['lanes']
+	edge_v = list(g.in_edges(n, data=True))[0][:2]
+	new_id = list(g.out_edges(n, data=True))[0][2]['id']
+	coords = list(filter(None, list(g.in_edges(n, data=True))[0][2]['others'] + [[n[1], n[0]]]
+				+ list(g.out_edges(n, data=True))[0][2]['others']))
+	lanes_u = list(g.out_edges(n, data=True))[0][2]['lanes']
+	lanes_v = list(g.in_edges(n, data=True))[0][2]['lanes']
 	if edge_u != edge_v:
 		# remove edges and node
 		if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
@@ -179,7 +179,7 @@ def simplify_oneways(n, g, check_lanes):
 			g.remove_edge(edge_u[1], edge_u[0])
 			g.remove_edge(edge_v[0], edge_v[1])
 			g.remove_node(n)
-	elif edge_u == edge_v and hash_list_of_lists_and_compare(g.in_edges(n, data=True)[0][2]['others'], g.out_edges(n, data=True)[0][2]['others']):
+	elif edge_u == edge_v and hash_list_of_lists_and_compare(list(g.in_edges(n, data=True))[0][2]['others'], list(g.out_edges(n, data=True))[0][2]['others']):
 		if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
 			g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
 			g.remove_edge(edge_u[1], edge_u[0])
@@ -194,25 +194,25 @@ def hash_list_of_lists_and_compare(list1, list2):
 
 
 def simplify_twoways(n, g, check_lanes):
-	edge_u1 = g.out_edges(n, data=True)[0][:2]
-	edge_u2 = g.out_edges(n, data=True)[1][:2]
+	edge_u1 = list(g.out_edges(n, data=True))[0][:2]
+	edge_u2 = list(g.out_edges(n, data=True))[1][:2]
 	temp1 = reversed(edge_u1)
 	edge_u1 = tuple(temp1)
 	temp2 = reversed(edge_u2)
 	edge_u2 = tuple(temp2)
-	new_id_out = g.out_edges(n, data=True)[0][2]['id']
-	new_id_in = g.in_edges(n, data=True)[0][2]['id']
-	coords_out = list(filter(None, g.in_edges(n, data=True)[1][2]['others'] + [[n[1], n[0]]]
-							+ g.out_edges(n, data=True)[0][2]['others']))
+	new_id_out = list(g.out_edges(n, data=True))[0][2]['id']
+	new_id_in = list(g.in_edges(n, data=True))[0][2]['id']
+	coords_out = list(filter(None, list(g.in_edges(n, data=True))[1][2]['others'] + [[n[1], n[0]]]
+							+ list(g.out_edges(n, data=True))[0][2]['others']))
 	coords_in = list(reversed(coords_out))
-	edge_v1 = g.in_edges(n, data=True)[0][:2]
-	edge_v2 = g.in_edges(n, data=True)[1][:2]
+	edge_v1 = list(g.in_edges(n, data=True))[0][:2]
+	edge_v2 = list(g.in_edges(n, data=True))[1][:2]
 	edges_u = (edge_u1, edge_u2)
 	edges_v = (edge_v1, edge_v2)
-	lanes_u1 = g.out_edges(n, data=True)[0][2]['lanes']
-	lanes_u2 = g.out_edges(n, data=True)[1][2]['lanes']
-	lanes_v1 = g.in_edges(n, data=True)[0][2]['lanes']
-	lanes_v2 = g.in_edges(n, data=True)[1][2]['lanes']
+	lanes_u1 = list(g.out_edges(n, data=True))[0][2]['lanes']
+	lanes_u2 = list(g.out_edges(n, data=True))[1][2]['lanes']
+	lanes_v1 = list(g.in_edges(n, data=True))[0][2]['lanes']
+	lanes_v2 = list(g.in_edges(n, data=True))[1][2]['lanes']
 	if edges_u == edges_v:
 		# remove edges and node
 		is_deleted = [False, False]
@@ -246,7 +246,7 @@ def check_oneway_loop(edge):
 
 
 def prepare_to_saving_optimized(g, json_dict):
-	list_of_edges = list(g.edges_iter(data=True))
+	list_of_edges = list(g.edges(data=True))
 	temp_dict = dict()
 
 	for edge in list_of_edges:
