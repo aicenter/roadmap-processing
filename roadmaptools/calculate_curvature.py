@@ -17,7 +17,7 @@ def compute_edge_curvatures():
     print_info('Computing average edge curvatures.')
     start_time = time.time()
 
-    input_stream = codecs.open(input_filename, encoding='utf8')
+    input_stream = open(input_filename, encoding='utf8')
     output_stream = open(output_filename, 'w')
 
     print_info("Loading geojson from: {}".format(input_filename))

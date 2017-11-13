@@ -2,6 +2,8 @@ import urllib.request
 import os
 import bz2
 import sys
+import geojson
+import geojson.feature
 
 from tqdm import tqdm
 from logging import info
@@ -15,23 +17,16 @@ class Progressbar(tqdm):
 	def update_to(self, b=1, bsize=1, tsize=None):
 		"""
 		b  : int, optional
-            Number of blocks transferred so far [default: 1].
-        bsize  : int, optional
-            Size of each block (in tqdm units) [default: 1].
-        tsize  : int, optional
-            Total size (in tqdm units). If [default: None] remains unchanged.
-        """
+			Number of blocks transferred so far [default: 1].
+		bsize  : int, optional
+			Size of each block (in tqdm units) [default: 1].
+		tsize  : int, optional
+			Total size (in tqdm units). If [default: None] remains unchanged.
+		"""
 
 		if tsize is not None:
 			self.total = tsize
 		self.update(b * bsize - self.n)  # will also set self.n = b * bsize
-
-#
-# with TqdmUpTo(unit='B', unit_scale=True, miniters=1,
-# 			  desc=eg_link.split('/')[-1]) as t:  # all optional kwargs
-# 	urllib.urlretrieve(eg_link, filename=os.devnull,
-# 					   reporthook=t.update_to, data=None)
-
 
 def download_file(url: str, file_name: str):
 	print_info("Downloading file from {} to {}".format(url, file_name))
@@ -62,3 +57,9 @@ def get_osm_from_mapzen():
 	download_file(config.osm_source_url, config.osm_map_filename + ".bz2")
 	extract_file(config.osm_map_filename + ".bz2")
 	print_info("Map from mapzen ready.")
+
+
+def load_geojson(filepath: str) -> geojson.feature.FeatureCollection:
+	input_stream = open(filepath, encoding='utf8')
+	json_dict = geojson.load(input_stream)
+	return json_dict
