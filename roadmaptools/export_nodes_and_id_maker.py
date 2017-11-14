@@ -4,6 +4,7 @@ from geojson import Point, Feature, FeatureCollection
 import networkx as nx
 import sys
 import argparse
+import roadmaptools.graph
 
 
 def create_unique_ids(input_stream, output_stream, formated):
@@ -42,7 +43,7 @@ def export_points_to_geojson(json_dict):
     g = load_graph(json_dict)
     list_of_features = []
     for n in g.nodes_iter():
-        node_id = get_node_id(n)
+        node_id = roadmaptools.graph.get_node_id(n)
         point = Point(n)
         feature = Feature(geometry=point, properties={'node_id': node_id})
         list_of_features.append(feature)
@@ -53,19 +54,6 @@ def export_points_to_geojson(json_dict):
     #     geojson.dump(json_dict_with_points, outfile)
     # outfile.close()
     return json_dict_with_points
-
-
-def get_node_id(node_id):  # return String
-    lon = int(node_id[0] * 10 ** 6)
-    lat = int(node_id[1] * 10 ** 6)
-    if lon < 0 and lat < 0:
-        return "1" + str(lon)[1:] + str(lat)[1:]
-    elif lon < 0 and lat >= 0:
-        return "2" + str(lon)[1:] + str(lat)
-    elif lon >= 0 and lat < 0:
-        return "3" + str(lon) + str(lat)[1:]
-    else:
-        return str(lon) + str(lat)
 
 
 def get_ids(json_dict):
@@ -80,8 +68,8 @@ def get_ids(json_dict):
 
         from_node = item['geometry']['coordinates'][0]
         to_node = item['geometry']['coordinates'][-1]
-        from_node_id = get_node_id(from_node)
-        to_node_id = get_node_id(to_node)
+        from_node_id = roadmaptools.graph.get_node_id(from_node)
+        to_node_id = roadmaptools.graph.get_node_id(to_node)
         item['properties']['from_id'] = from_node_id
         item['properties']['to_id'] = to_node_id
 

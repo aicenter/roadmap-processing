@@ -60,6 +60,13 @@ def get_osm_from_mapzen():
 
 
 def load_geojson(filepath: str) -> geojson.feature.FeatureCollection:
+	print_info("Loading geojson file from: {}".format(filepath))
 	input_stream = open(filepath, encoding='utf8')
 	json_dict = geojson.load(input_stream)
 	return json_dict
+
+
+def save_geojson(data: geojson.feature.FeatureCollection, filepath: str):
+	print_info("Saving geojson file to: {}".format(filepath))
+	out_stream = open(filepath, 'w')
+	geojson.dump(data, out_stream)
