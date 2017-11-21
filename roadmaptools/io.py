@@ -70,3 +70,4 @@ def save_geojson(data: geojson.feature.FeatureCollection, filepath: str):
 	print_info("Saving geojson file to: {}".format(filepath))
 	out_stream = open(filepath, 'w')
 	geojson.dump(data, out_stream)
+

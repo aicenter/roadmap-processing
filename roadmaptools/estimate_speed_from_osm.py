@@ -53,13 +53,13 @@ def get_speeds(json_dict):
     for item in json_dict['features']:
         if 'maxspeed' not in item['properties']:
             if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
-                item['properties']['speed'] = 130
+                item['properties']['maxspeed'] = 130
             elif item['properties']['highway'] == 'living_street':  # for czechia
-                item['properties']['speed'] = 20
+                item['properties']['maxspeed'] = 20
             else:
-                item['properties']['speed'] = 50
+                item['properties']['maxspeed'] = 50
         else:
-            item['properties']['speed'] = int(item['properties']['maxspeed'])
+            item['properties']['maxspeed'] = int(item['properties']['maxspeed'])
         item['properties']['length'] = get_length(item['geometry']['coordinates'])
 
 
