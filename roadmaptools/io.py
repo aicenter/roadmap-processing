@@ -28,6 +28,7 @@ class Progressbar(tqdm):
 			self.total = tsize
 		self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
+
 def download_file(url: str, file_name: str):
 	print_info("Downloading file from {} to {}".format(url, file_name))
 	with Progressbar(unit='B', unit_scale=True, miniters=1, desc="Downloading file") as progressbar:

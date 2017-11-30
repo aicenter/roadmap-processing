@@ -6,6 +6,7 @@ from geojson import LineString, Feature
 import argparse
 import sys
 import time
+import roadmaptools.io
 
 from roadmaptools.init import config
 from roadmaptools.printer import print_info
@@ -14,41 +15,32 @@ thresholds = [0, 0.01, 0.5, 1, 2]
 
 
 def simplify_geojson():
-	input_file = config.cleaned_geojson_file
-	output_file = config.simplified_file
 	print_info('Simplifying geoJSON')
 	start_time = time.time()
 
-	input_stream = codecs.open(input_file, encoding='utf8')
-	output_stream = open(output_file, 'w')
-
 	# l_check set True whether you don't want to simplify edges with different number of lanes
 	# c_check set True whether you don't want to simplify edges with different curvature
-	print_info("Loading geojson file from: {}".format(input_file))
-	geojson_file = load_geojson(input_stream)
+	geojson_file = roadmaptools.io.load_geojson(config.cleaned_geojson_file)
 
 	print_info("Simplification process started")
 	geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)
 
-	print_info("Saving file to: {}".format(output_file))
-	save_geojson(geojson_out, output_stream)
-	input_stream.close()
-	output_stream.close()
+	roadmaptools.io.save_geojson(geojson_out, config.simplified_file)
 
 	print_info('Simplification completed. (%.2f secs)' % (time.time() - start_time))
 
 
-def simplify(input_stream, output_stream, l_check, c_check):
+def simplify(input_filepath, output_filepath, l_check, c_check):
 	check_lanes = not l_check  # true means don't simplify edges with different num of lanes
 	check_curvatures = c_check
-	json_dict = load_geojson(input_stream)
+	json_dict = roadmaptools.io.load_geojson(input_filepath)
 	graph = _load_graph(json_dict)
 	simplify_graph(graph, check_lanes)
 	prepare_to_saving_optimized(graph, json_dict)
 	if check_curvatures:
 		_simplify_curvature(json_dict)
 		json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-	save_geojson(json_dict, output_stream)
+	roadmaptools.io.save_geojson(json_dict, output_filepath)
 
 
 def get_simplified_geojson(json_dict, l_check=False, c_check=False):
@@ -81,11 +73,6 @@ def try_find(id, temp_dict):
 		return ret
 	else:
 		return [True]
-
-
-def load_geojson(in_stream):
-	json_dict = geojson.load(in_stream)
-	return json_dict
 
 
 def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
@@ -269,10 +256,6 @@ def prepare_to_saving_optimized(g, json_dict):
 	json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
 
 
-def save_geojson(json_dict, out_stream):
-	geojson.dump(json_dict, out_stream)
-
-
 def get_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-i', dest="input", type=str, action='store', help='input file')
@@ -285,16 +268,15 @@ def get_args():
 # EXAMPLE OF USAGE
 if __name__ == '__main__':
 	args = get_args()
-	input_stream = sys.stdin
-	output_stream = sys.stdout
-
-	if args.input is not None:
-		input_stream = codecs.open(args.input, encoding='utf8')
-	if args.output is not None:
-		output_stream = codecs.open(args.output, 'w')
+	# input_stream = sys.stdin
+	# output_stream = sys.stdout
+	#
+	# if args.input is not None:
+	# 	input_stream = codecs.open(args.input, encoding='utf8')
+	# if args.output is not None:
+	# 	output_stream = codecs.open(args.output, 'w')
 
 	# l_check set True whether you don't want to simplify edges with different number of lanes
 	# c_check set True whether you don't want to simplify edges with different curvature
-	simplify(input_stream, output_stream, l_check=args.lanes, c_check=args.curs)
-	input_stream.close()
-	output_stream.close()
+	simplify(args.input, args.output, l_check=args.lanes, c_check=args.curs)
+
