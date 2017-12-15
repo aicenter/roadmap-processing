@@ -4,7 +4,10 @@ import bz2
 import sys
 import geojson
 import geojson.feature
+import networkx as nx
+import csv
 
+from typing import Iterable
 from tqdm import tqdm
 from logging import info
 from roadmaptools.init import config
@@ -61,7 +64,7 @@ def get_osm_from_mapzen():
 
 
 def load_geojson(filepath: str) -> geojson.feature.FeatureCollection:
-	print_info("Loading geojson file from: {}".format(filepath))
+	print_info("Loading geojson file from: {}".format(os.path.realpath(filepath)))
 	input_stream = open(filepath, encoding='utf8')
 	json_dict = geojson.load(input_stream)
 	return json_dict
@@ -71,4 +74,25 @@ def save_geojson(data: geojson.feature.FeatureCollection, filepath: str):
 	print_info("Saving geojson file to: {}".format(filepath))
 	out_stream = open(filepath, 'w')
 	geojson.dump(data, out_stream)
+
+
+def load_csv(filepath: str) -> Iterable:
+	print_info("Loading geojson file from: {}".format(os.path.realpath(filepath)))
+	f = open(filepath, "r")
+	return csv.reader(f)
+
+
+def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
+	g = nx.MultiDiGraph()
+	print_info("Creating networkx graph from geojson")
+	for item in tqdm(data['features'], desc="processing features"):
+		coord = item['geometry']['coordinates']
+		coord_u = _get_node(coord[0])
+		coord_v = _get_node(coord[-1])
+		g.add_edge(coord_u, coord_v, id=item['properties']['id'])
+	return g
+
+
+def _get_node(node):
+	return (node[1], node[0])
 
