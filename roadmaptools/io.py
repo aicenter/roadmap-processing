@@ -77,7 +77,7 @@ def save_geojson(data: geojson.feature.FeatureCollection, filepath: str):
 
 
 def load_csv(filepath: str) -> Iterable:
-	print_info("Loading geojson file from: {}".format(os.path.realpath(filepath)))
+	print_info("Loading csv file from: {}".format(os.path.realpath(filepath)))
 	f = open(filepath, "r")
 	return csv.reader(f)
 
