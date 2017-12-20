@@ -6,10 +6,13 @@ import geojson
 import geojson.feature
 import networkx as nx
 import csv
+import gpxpy
+import gpxpy.gpx
 
 from typing import Iterable
 from tqdm import tqdm
 from logging import info
+from gpxpy.gpx import GPX
 from roadmaptools.init import config
 from roadmaptools.printer import print_info
 
@@ -80,6 +83,18 @@ def load_csv(filepath: str) -> Iterable:
 	print_info("Loading csv file from: {}".format(os.path.realpath(filepath)))
 	f = open(filepath, "r")
 	return csv.reader(f)
+
+
+def save_gpx(data: GPX, filepath: str):
+	print_info("Saving GPX file to: {}".format(os.path.realpath(filepath)))
+	with open(filepath, 'w') as outfile:
+		outfile.write(data.to_xml())
+
+
+def load_gpx(filepath: str) -> GPX:
+	print_info("Loading GPX file from: {}".format(os.path.realpath(filepath)))
+	gpx_file = open(filepath, 'r')
+	return gpxpy.parse(gpx_file)
 
 
 def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
