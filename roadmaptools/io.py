@@ -89,12 +89,15 @@ def save_gpx(data: GPX, filepath: str):
 	print_info("Saving GPX file to: {}".format(os.path.realpath(filepath)))
 	with open(filepath, 'w') as outfile:
 		outfile.write(data.to_xml())
+	print_info("{} tracks saved".format(len(data.tracks)))
 
 
 def load_gpx(filepath: str) -> GPX:
 	print_info("Loading GPX file from: {}".format(os.path.realpath(filepath)))
 	gpx_file = open(filepath, 'r')
-	return gpxpy.parse(gpx_file)
+	gpx = gpxpy.parse(gpx_file)
+	print_info("{} tracks loaded".format(len(gpx.tracks)))
+	return gpx
 
 
 def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
