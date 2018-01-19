@@ -111,6 +111,11 @@ def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
 	return g
 
 
+def load_graph_from_geojson(filepath: str) -> nx.MultiDiGraph:
+	data = load_geojson(filepath)
+	return load_graph(data)
+
+
 def _get_node(node):
 	return (node[1], node[0])
 
