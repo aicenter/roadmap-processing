@@ -43,5 +43,9 @@ def np_utm_to_wgs84(latlon):
 	return np.column_stack([lat, lon])
 
 
-def wgs84_to_utm(latitude: float, longitude: float) -> Tuple(float, float):
+def wgs84_to_utm(latitude: float, longitude: float) -> Tuple[float, float]:
 	return projection.wgs84_to_utm(latitude, longitude)
+
+
+def utm_to_wgs84(latitude: float, longitude: float) -> Tuple[float, float]:
+	return projection.utm_to_wgs84(latitude, longitude)

@@ -104,10 +104,10 @@ def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
 	g = nx.MultiDiGraph()
 	print_info("Creating networkx graph from geojson")
 	for item in tqdm(data['features'], desc="processing features"):
-		coord = item['geometry']['coordinates']
-		coord_u = _get_node(coord[0])
-		coord_v = _get_node(coord[-1])
-		g.add_edge(coord_u, coord_v, id=item['properties']['id'])
+		coords = item['geometry']['coordinates']
+		coord_from = _get_node(coords[0])
+		coord_to = _get_node(coords[-1])
+		g.add_edge(coord_from, coord_to, id=item['properties']['id'])
 	return g
 
 
