@@ -19,13 +19,15 @@ class TransposedUTM:
 
 	def wgs84_to_utm(self, lat, lon):
 		easting, northing, _, _ = utm.from_latlon(lat, lon, force_zone_number=self.origin_zone_number)
-		easting -= self.origin_easting
-		northing -= self.origin_northing
+		if config.shift_utm_coordinate_origin_to_utm_center:
+			easting -= self.origin_easting
+			northing -= self.origin_northing
 		return easting, northing
 
 	def utm_to_wgs84(self, easting, northing):
-		easting += self.origin_easting
-		northing += self.origin_northing
+		if config.shift_utm_coordinate_origin_to_utm_center:
+			easting += self.origin_easting
+			northing += self.origin_northing
 		return utm.to_latlon(easting, northing, self.origin_zone_number, self.origin_zone_letter)
 
 

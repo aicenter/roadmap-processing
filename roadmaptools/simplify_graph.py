@@ -6,7 +6,7 @@ from geojson import LineString, Feature
 import argparse
 import sys
 import time
-import roadmaptools.io
+import roadmaptools.inout
 
 from roadmaptools.init import config
 from roadmaptools.printer import print_info
@@ -20,12 +20,12 @@ def simplify_geojson():
 
 	# l_check set True whether you don't want to simplify edges with different number of lanes
 	# c_check set True whether you don't want to simplify edges with different curvature
-	geojson_file = roadmaptools.io.load_geojson(config.cleaned_geojson_file)
+	geojson_file = roadmaptools.inout.load_geojson(config.cleaned_geojson_file)
 
 	print_info("Simplification process started")
 	geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)
 
-	roadmaptools.io.save_geojson(geojson_out, config.simplified_file)
+	roadmaptools.inout.save_geojson(geojson_out, config.simplified_file)
 
 	print_info('Simplification completed. (%.2f secs)' % (time.time() - start_time))
 
@@ -33,14 +33,14 @@ def simplify_geojson():
 def simplify(input_filepath, output_filepath, l_check, c_check):
 	check_lanes = not l_check  # true means don't simplify edges with different num of lanes
 	check_curvatures = c_check
-	json_dict = roadmaptools.io.load_geojson(input_filepath)
+	json_dict = roadmaptools.inout.load_geojson(input_filepath)
 	graph = _load_graph(json_dict)
 	simplify_graph(graph, check_lanes)
 	prepare_to_saving_optimized(graph, json_dict)
 	if check_curvatures:
 		_simplify_curvature(json_dict)
 		json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-	roadmaptools.io.save_geojson(json_dict, output_filepath)
+	roadmaptools.inout.save_geojson(json_dict, output_filepath)
 
 
 def get_simplified_geojson(json_dict, l_check=False, c_check=False):

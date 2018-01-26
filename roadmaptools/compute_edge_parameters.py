@@ -1,4 +1,4 @@
-import roadmaptools.io
+import roadmaptools.inout
 import geojson.feature
 import networkx as nx
 
@@ -9,9 +9,9 @@ _computations = []
 
 
 def compute_edge_parameters():
-	geojson_file = roadmaptools.io.load_geojson(config.simplified_file_with_speed_and_curvature)
+	geojson_file = roadmaptools.inout.load_geojson(config.simplified_file_with_speed_and_curvature)
 
-	graph = roadmaptools.io.load_graph(geojson_file)
+	graph = roadmaptools.inout.load_graph(geojson_file)
 
 	edge_map = _create_edge_map(graph)
 
@@ -22,7 +22,7 @@ def compute_edge_parameters():
 	for computation in _computations:
 		computation(graph, geojson_file, edge_map)
 
-	roadmaptools.io.save_geojson(geojson_file, config.completely_processed_geojson)
+	roadmaptools.inout.save_geojson(geojson_file, config.completely_processed_geojson)
 
 
 def compute_centrality(graph: nx.MultiDiGraph, data: geojson.feature.FeatureCollection, edge_map: Dict):
