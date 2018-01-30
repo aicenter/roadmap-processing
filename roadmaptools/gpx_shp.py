@@ -1,6 +1,6 @@
 from typing import Callable, Tuple
-from gpxpy.gpx import GPXTrack
-from shapely.geometry import LineString
+from gpxpy.gpx import GPXTrack, GPXTrackPoint
+from shapely.geometry import LineString, Point
 
 
 def track_to_linestring(track: GPXTrack, coordinate_convertor: Callable[[float, float], Tuple[float, float]] = None)\
@@ -15,3 +15,13 @@ def track_to_linestring(track: GPXTrack, coordinate_convertor: Callable[[float, 
 			points.append(coords)
 
 	return LineString(points)
+
+
+def trackpoint_to_point(trackpoint: GPXTrackPoint,
+						coordinate_convertor: Callable[[float, float], Tuple[float, float]] = None) -> Point:
+	if coordinate_convertor:
+		coords = coordinate_convertor(trackpoint.latitude, trackpoint.longitude)
+	else:
+		coords = (trackpoint.latitude, trackpoint.longitude)
+	return Point(*coords)
+

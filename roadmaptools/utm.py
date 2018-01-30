@@ -1,3 +1,4 @@
+import math
 import utm
 import numpy as np
 
@@ -51,3 +52,8 @@ def wgs84_to_utm(latitude: float, longitude: float) -> Tuple[float, float]:
 
 def utm_to_wgs84(latitude: float, longitude: float) -> Tuple[float, float]:
 	return projection.utm_to_wgs84(latitude, longitude)
+
+
+def get_id_from_utm_coords(x: float, y: float) -> int:
+	y_int = int(round(y, 3) * 1000)
+	return int(round(x, 3) * 1000) * int(math.pow(10, len(str(y_int)))) + y_int
