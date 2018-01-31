@@ -9,8 +9,14 @@ from tqdm import tqdm, trange
 from roadmaptools.printer import print_info
 from roadmaptools.init import config
 
-set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel', 'traffic_calming', 'lanes:forward', 'lanes:backward'}
-dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str, 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int, 'lanes:backward': int}
+# properties that will not be deleted
+set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel',
+							'traffic_calming', 'lanes:forward', 'lanes:backward', 'junction'}
+
+# for correct type conversion
+dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed': int, 'oneway': str, 'bridge': str,
+							 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int,
+							 'lanes:backward': int, 'junction': str}
 
 
 def clean_geojson_files():
