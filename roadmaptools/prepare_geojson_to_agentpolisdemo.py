@@ -7,6 +7,7 @@ import copy
 from export_nodes_and_id_maker import export_points_to_geojson, get_ids
 import sys
 import argparse
+import roadmaptools.sanitize
 
 temp_edges = list()
 temp_features = list()
@@ -124,18 +125,6 @@ def load_graph(json_dict):
     return g
 
 
-def get_biggest_component(graph):
-    biggest_subgraph = graph
-
-    if not nx.is_strongly_connected(graph):
-        maximum_number_of_nodes = -1
-        for subgraph in nx.strongly_connected_components(graph):
-            if len(subgraph) > maximum_number_of_nodes:
-                maximum_number_of_nodes = len(subgraph)
-                biggest_subgraph = subgraph
-    return biggest_subgraph
-
-
 def create_DiGraph(g):
     temp_gr = nx.DiGraph()
     for n, nbrsdict in g.adjacency_iter():
@@ -148,7 +137,7 @@ def create_DiGraph(g):
 def prepare_graph_to_agentpolisdemo(input_stream, output_stream):
     json_dict = load_geojson(input_stream)
     graph = load_graph(json_dict)
-    biggest_subgraph = get_biggest_component(graph)
+    biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
     new_graph = traverse_and_create_graph(graph, biggest_subgraph)
 
     detect_parallel_edges(new_graph)
