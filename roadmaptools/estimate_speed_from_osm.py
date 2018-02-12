@@ -9,9 +9,7 @@ from roadmaptools.printer import print_info
 from roadmaptools.init import config
 
 
-def estimate_travel_speed():
-    input_filename = config.simplified_file
-    output_filename = config.simplified_file_with_speed
+def estimate_posted_speed(input_filename: str, output_filename: str):
     print_info('Estimating travel speed')
     start_time = time.time()
 

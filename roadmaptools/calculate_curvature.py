@@ -10,9 +10,7 @@ from roadmaptools.printer import print_info
 from roadmaptools.init import config
 
 
-def compute_edge_curvatures():
-    input_filename = config.simplified_file_with_speed
-    output_filename = config.simplified_file_with_speed_and_curvature
+def compute_edge_curvatures(input_filename: str, output_filename: str):
 
     print_info('Computing average edge curvatures.')
     start_time = time.time()

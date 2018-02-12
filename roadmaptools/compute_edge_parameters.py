@@ -8,10 +8,10 @@ from roadmaptools.init import config
 _computations = []
 
 
-def compute_edge_parameters():
-	geojson_file = roadmaptools.inout.load_geojson(config.simplified_file_with_speed_and_curvature)
+def compute_edge_parameters(input_filename: str, output_filename: str):
+	geojson_content = roadmaptools.inout.load_geojson(input_filename)
 
-	graph = roadmaptools.inout.load_graph(geojson_file)
+	graph = roadmaptools.inout.load_graph(geojson_content)
 
 	edge_map = _create_edge_map(graph)
 
@@ -20,9 +20,9 @@ def compute_edge_parameters():
 	_computations.append(compute_centrality)
 
 	for computation in _computations:
-		computation(graph, geojson_file, edge_map)
+		computation(graph, geojson_content, edge_map)
 
-	roadmaptools.inout.save_geojson(geojson_file, config.completely_processed_geojson)
+	roadmaptools.inout.save_geojson(geojson_content, output_filename)
 
 
 def compute_centrality(graph: nx.MultiDiGraph, data: geojson.feature.FeatureCollection, edge_map: Dict):
