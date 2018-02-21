@@ -2,6 +2,7 @@ import urllib.request
 import os
 import bz2
 import sys
+import pickle
 import geojson
 import geojson.feature
 import networkx as nx
@@ -114,6 +115,11 @@ def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
 def load_graph_from_geojson(filepath: str) -> nx.MultiDiGraph:
 	data = load_geojson(filepath)
 	return load_graph(data)
+
+
+def save_pickle(data, filename):
+	with open(filename, 'wb') as f:
+		pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
 
 def _get_node(node):
