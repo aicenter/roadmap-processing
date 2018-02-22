@@ -10,7 +10,7 @@ import csv
 import gpxpy
 import gpxpy.gpx
 
-from typing import Iterable
+from typing import Iterable, Callable, Dict
 from tqdm import tqdm
 from logging import info
 from gpxpy.gpx import GPX
@@ -101,14 +101,18 @@ def load_gpx(filepath: str) -> GPX:
 	return gpx
 
 
-def load_graph(data: geojson.feature.FeatureCollection) -> nx.MultiDiGraph:
+def load_graph(data: geojson.feature.FeatureCollection, attribute_constructor: Callable[[geojson.Feature], Dict])\
+		-> nx.MultiDiGraph:
 	g = nx.MultiDiGraph()
 	print_info("Creating networkx graph from geojson")
 	for item in tqdm(data['features'], desc="processing features"):
 		coords = item['geometry']['coordinates']
 		coord_from = _get_node(coords[0])
 		coord_to = _get_node(coords[-1])
-		g.add_edge(coord_from, coord_to, id=item['properties']['id'])
+		if attribute_constructor:
+			g.add_edge(coord_from, coord_to, id=item['properties']['id'], attr=attribute_constructor(item))
+		else:
+			g.add_edge(coord_from, coord_to, id=item['properties']['id'])
 	return g
 
 
@@ -123,5 +127,5 @@ def save_pickle(data, filename):
 
 
 def _get_node(node):
-	return (node[1], node[0])
+	return node[1], node[0]
 
