@@ -10,7 +10,7 @@ import csv
 import gpxpy
 import gpxpy.gpx
 
-from typing import Iterable, Callable, Dict
+from typing import Iterable, Callable, Dict, Tuple
 from tqdm import tqdm
 from logging import info
 from gpxpy.gpx import GPX
@@ -101,14 +101,19 @@ def load_gpx(filepath: str) -> GPX:
 	return gpx
 
 
-def load_graph(data: geojson.feature.FeatureCollection, attribute_constructor: Callable[[geojson.Feature], Dict])\
-		-> nx.MultiDiGraph:
-	g = nx.MultiDiGraph()
+def load_graph(data: geojson.feature.FeatureCollection,
+			   attribute_constructor: Callable[[geojson.LineString], Dict]=None,
+			   coordinate_convertor: Callable[[float, float], Tuple[float, float]] = None) -> nx.DiGraph:
+	g = nx.DiGraph()
 	print_info("Creating networkx graph from geojson")
 	for item in tqdm(data['features'], desc="processing features"):
 		coords = item['geometry']['coordinates']
-		coord_from = _get_node(coords[0])
-		coord_to = _get_node(coords[-1])
+		if coordinate_convertor:
+			coord_from = coordinate_convertor(coords[0][1], coords[0][0])
+			coord_to = coordinate_convertor(coords[-1][1], coords[-1][0])
+		else:
+			coord_from = (coords[0][1], coords[0][0])
+			coord_to = (coords[-1][1], coords[-1][0])
 		if attribute_constructor:
 			g.add_edge(coord_from, coord_to, id=item['properties']['id'], attr=attribute_constructor(item))
 		else:
@@ -116,16 +121,20 @@ def load_graph(data: geojson.feature.FeatureCollection, attribute_constructor: C
 	return g
 
 
-def load_graph_from_geojson(filepath: str) -> nx.MultiDiGraph:
+def load_graph_from_geojson(filepath: str) -> nx.DiGraph:
 	data = load_geojson(filepath)
 	return load_graph(data)
 
+
+def load_pickle(filename: str):
+	with open(filename, 'rb') as pickled_data:
+		data = pickle.load(pickled_data)
+
+	return data
 
 def save_pickle(data, filename):
 	with open(filename, 'wb') as f:
 		pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
 
-def _get_node(node):
-	return node[1], node[0]
 
