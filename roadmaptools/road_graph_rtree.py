@@ -13,7 +13,7 @@ from roadmaptools.printer import print_info
 
 class RoadGraphRtree:
 
-	def __init__(self, road_graph: DiGraph, search_size: int=20, path: str=None):
+	def __init__(self, road_graph: DiGraph, search_size: int=500, path: str=None):
 		self.search_size = search_size
 		self.index = self._build_index(road_graph, path)
 
@@ -49,7 +49,7 @@ class RoadGraphRtree:
 				nearest = edge
 
 		if not nearest:
-			print_info("no edge found in specified distance")
+			print_info("No edge found in specified distance ({} m).".format(self.search_size))
 
 		envelope = Polygon(((search_bounds[0], search_bounds[3]), (search_bounds[2], search_bounds[3]),
 						   (search_bounds[2], search_bounds[1]), (search_bounds[0], search_bounds[1])))
