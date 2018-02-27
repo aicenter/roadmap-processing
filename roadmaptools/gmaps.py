@@ -6,17 +6,20 @@ import networkx as nx
 import codecs
 import os.path
 
+from typing import Union, Tuple, List
 from roadmaptools.printer import print_info
 
 
-class gMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
+class GMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 
 	traffic_models = ["best_guess", "pessimistic", "optimistic"]
 	temp_dict = dict()
 	json_dict = dict()
 	g = nx.MultiDiGraph()
 
-	def __init__(self, pathname):
+	max_paths_in_request = 10
+
+	def __init__(self, pathname=None):
 		self.pathname = pathname
 
 	def find_edge(self, id, model):
@@ -25,22 +28,34 @@ class gMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 		speed = self.temp_dict[id]['speed_' + model]
 		return [duration, distance, speed]
 
-	def google_maps_request(self, vertex_u, vertex_v, time: datetime, model: str="best_guess"):
+	def google_maps_request(self, start: Union[Tuple[float,float], List[Tuple[float,float]]],
+							target: Union[Tuple[float,float], List[Tuple[float,float]]], time: datetime,
+							model: str= "best_guess"):
 		try:
 			gmaps = googlemaps.Client(key='AIzaSyDoCeLZhFJkx2JTLH8UMcsouaVUIwbV_wY')
 			# time = datetime(2017, 11, 14, 7, 0, 0)  # 7 hours after midnight
-			result = gmaps.distance_matrix(vertex_u, vertex_v, mode="driving", language="en-GB", units="metric",
+			print_info("Request sent")
+			result = gmaps.distance_matrix(start, target, mode="driving", language="en-GB", units="metric",
 										   departure_time=time, traffic_model=model)
+			print_info("Response obtained")
 			# print(self.get_velocity(result))
-			duration = result['rows'][0]['elements'][0]['duration_in_traffic']['value']
-			distance = result['rows'][0]['elements'][0]['distance']['value']
-			try:
-				speed = float(distance / duration) * 3.6
-			except:
-				speed = distance * 3.6
-			return [duration, distance, speed]
+			# duration = result['rows'][0]['elements'][0]['duration_in_traffic']['value']
+			# distance = result['rows'][0]['elements'][0]['distance']['value']
+			return result
 		except (googlemaps.exceptions) as error:
 			print_info("Google maps exception: {}".format(error))
+
+	def get_durations_and_times(self, start: Union[Tuple[float,float], List[Tuple[float,float]]],
+							target: Union[Tuple[float,float], List[Tuple[float,float]]], time: datetime,
+							model: str= "best_guess"):
+		for index, str in enumerate(start):
+			starts, targets = 0
+			if index % self.max_paths_in_request == 0:
+				if index > 0:
+					result = self.google_maps_request()
+				starts = []
+				targets = []
+
 
 	def get_node(self, node):
 		return (node[1], node[0])  # order is latlon
@@ -117,8 +132,3 @@ class gMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 # prekonvertovat do geojson
 # procistit
 # ohodnotit
-
-data_from_gmaps.py
-Zobrazování
-položky
-data_from_gmaps.py.
