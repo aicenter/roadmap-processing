@@ -28,16 +28,15 @@ class GMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 		speed = self.temp_dict[id]['speed_' + model]
 		return [duration, distance, speed]
 
-	def google_maps_request(self, start: Union[Tuple[float,float], List[Tuple[float,float]]],
-							target: Union[Tuple[float,float], List[Tuple[float,float]]], time: datetime,
-							model: str= "best_guess"):
+	def google_maps_find_path(self, start: Tuple[float, float], target: Tuple[float, float], time: datetime,
+							  model: str= "best_guess"):
 		try:
 			gmaps = googlemaps.Client(key='AIzaSyDoCeLZhFJkx2JTLH8UMcsouaVUIwbV_wY')
 			# time = datetime(2017, 11, 14, 7, 0, 0)  # 7 hours after midnight
-			print_info("Request sent")
-			result = gmaps.distance_matrix(start, target, mode="driving", language="en-GB", units="metric",
+			# print_info("Request sent")
+			result = gmaps.directions(start, target, mode="driving", language="en-GB", units="metric",
 										   departure_time=time, traffic_model=model)
-			print_info("Response obtained")
+			# print_info("Response obtained")
 			# print(self.get_velocity(result))
 			# duration = result['rows'][0]['elements'][0]['duration_in_traffic']['value']
 			# distance = result['rows'][0]['elements'][0]['distance']['value']
@@ -45,16 +44,29 @@ class GMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 		except (googlemaps.exceptions) as error:
 			print_info("Google maps exception: {}".format(error))
 
-	def get_durations_and_times(self, start: Union[Tuple[float,float], List[Tuple[float,float]]],
-							target: Union[Tuple[float,float], List[Tuple[float,float]]], time: datetime,
-							model: str= "best_guess"):
-		for index, str in enumerate(start):
-			starts, targets = 0
+	def get_durations_and_distances(self, starts: Union[Tuple[float, float], List[Tuple[float, float]]],
+									targets: Union[Tuple[float,float], List[Tuple[float,float]]], time: datetime,
+									model: str= "best_guess"):
+		rows = []
+		for index, start in enumerate(starts):
+			start_batch, target_batch = 0
 			if index % self.max_paths_in_request == 0:
 				if index > 0:
-					result = self.google_maps_request()
-				starts = []
-				targets = []
+					result = self.google_maps_find_path(start_batch, target_batch, time, model)
+					rows.extend(result['rows'])
+				start_batch = []
+				target_batch = []
+
+			start_batch.append(start)
+			target_batch.append(targets[index])
+
+		durations = []
+		distances = []
+		for row in rows:
+			durations.append(row['elements'][0]['duration_in_traffic']['value'])
+			distances.append(row['elements'][0]['distance']['value'])
+
+		return durations, distances
 
 
 	def get_node(self, node):
@@ -92,7 +104,7 @@ class GMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 				for key, d in keydict.items():
 					if 'duration_optimistic' not in d:
 						for model in self.traffic_models:
-							res = self.google_maps_request(n, nbr, model)  # return duration, distance, speed
+							res = self.google_maps_find_path(n, nbr, model)  # return duration, distance, speed
 							d['duration_' + model] = res[0]
 							d['distance_' + model] = res[1]
 							d['speed_' + model] = res[2]
