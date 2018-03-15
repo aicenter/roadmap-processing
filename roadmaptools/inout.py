@@ -80,10 +80,10 @@ def save_geojson(data: geojson.feature.FeatureCollection, filepath: str):
 	geojson.dump(data, out_stream)
 
 
-def load_csv(filepath: str) -> Iterable:
+def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
 	print_info("Loading csv file from: {}".format(os.path.realpath(filepath)))
 	f = open(filepath, "r")
-	return csv.reader(f)
+	return csv.reader(f, delimiter=delimiter)
 
 
 def save_gpx(data: GPX, filepath: str):
