@@ -33,24 +33,24 @@ class TransposedUTM:
 
 
 # Project to Euclidean plane such that the units are meters.
-projection = TransposedUTM(config.utm_center_lon, config.utm_center_lat)
+default_projection = TransposedUTM(config.utm_center_lon, config.utm_center_lat)
 
 
-def np_wgs84_to_utm(latlon):
+def np_wgs84_to_utm(latlon, projection: TransposedUTM=default_projection):
 	easting, northing = np.vectorize(projection.wgs84_to_utm)(latlon[:, 0], latlon[:, 1])
 	return np.column_stack([easting,northing])
 
 
-def np_utm_to_wgs84(latlon):
+def np_utm_to_wgs84(latlon, projection: TransposedUTM=default_projection):
 	lat, lon = np.vectorize(projection.utm_to_wgs84)(latlon[:, 0], latlon[:, 1])
 	return np.column_stack([lat, lon])
 
 
-def wgs84_to_utm(latitude: float, longitude: float) -> Tuple[float, float]:
+def wgs84_to_utm(latitude: float, longitude: float, projection: TransposedUTM=default_projection) -> Tuple[float, float]:
 	return projection.wgs84_to_utm(latitude, longitude)
 
 
-def utm_to_wgs84(latitude: float, longitude: float) -> Tuple[float, float]:
+def utm_to_wgs84(latitude: float, longitude: float, projection: TransposedUTM=default_projection) -> Tuple[float, float]:
 	return projection.utm_to_wgs84(latitude, longitude)
 
 
