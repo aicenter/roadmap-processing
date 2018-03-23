@@ -10,7 +10,7 @@ import csv
 import gpxpy
 import gpxpy.gpx
 
-from typing import Iterable, Callable, Dict, Tuple
+from typing import Iterable, Callable, Dict, Tuple, List
 from tqdm import tqdm
 from logging import info
 from gpxpy.gpx import GPX
@@ -84,6 +84,13 @@ def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
 	print_info("Loading csv file from: {}".format(os.path.realpath(filepath)))
 	f = open(filepath, "r")
 	return csv.reader(f, delimiter=delimiter)
+
+
+def save_csv(data: List[List[str]], filepath: str):
+	with open(filepath, 'w', newline='') as csvfile:
+		writer = csv.writer(csvfile)
+		for row in data:
+			writer.writerow(row)
 
 
 def save_gpx(data: GPX, filepath: str):
