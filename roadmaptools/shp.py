@@ -1,7 +1,8 @@
+import math
 import shapely.ops
 import numpy as np
 
-from typing import List, Union
+from typing import List, Union, Tuple
 from roadmaptools.init import config
 from shapely.geometry import Point, LineString
 from shapely.geometry.base import BaseGeometry
@@ -79,10 +80,17 @@ def get_remaining_linestring(linestring: LineString, point: Point) -> LineString
 def extend_line(line: LineString, distance: float) -> LineString:
 	first_coord = line.coords[0]
 	last_coord = line.coords[-1]
-	sin = (last_coord[1] - first_coord[1]) / line.length
-	cos = (last_coord[0] - first_coord[0]) / line.length
-	new_length = line.length + distance
-	new_y = first_coord[1] + sin * new_length
-	new_x = first_coord[0] + cos * new_length
-	extension_point = Point(new_x, new_y)
+	extension_point = Point(extend_vector(first_coord, last_coord, distance))
 	return LineString([Point(first_coord[0], first_coord[1]), extension_point])
+
+
+def extend_vector(from_coord: Tuple[float, float], to_coord: Tuple[float, float], distance: float)\
+		-> Tuple[float, float]:
+	length = math.sqrt(math.pow(abs(to_coord[1] - from_coord[1]), 2) + math.pow(abs(to_coord[0] - from_coord[0]), 2))
+	sin = (to_coord[1] - from_coord[1]) / length
+	cos = (to_coord[0] - from_coord[0]) / length
+	new_length = length + distance
+	new_y = from_coord[1] + sin * new_length
+	new_x = from_coord[0] + cos * new_length
+	extension_point = (new_x, new_y)
+	return extension_point
