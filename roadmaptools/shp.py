@@ -74,7 +74,10 @@ def split(linestring: LineString, point: Point) -> Union[List[LineString], LineS
 
 def get_remaining_linestring(linestring: LineString, point: Point) -> LineString:
 	parts = split(linestring, point)
-	return parts[1] if parts[1] else parts[0]
+	if isinstance(parts, list):
+		return parts[1]
+	else:
+		return parts
 
 
 def extend_line(line: LineString, distance: float) -> LineString:
