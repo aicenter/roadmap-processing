@@ -8,7 +8,7 @@ import time
 from roadmaptools.printer import print_info
 from roadmaptools.init import config
 
-
+# length is computed here too!!!
 def estimate_posted_speed(input_filename: str, output_filename: str):
     print_info('Estimating travel speed')
     start_time = time.time()

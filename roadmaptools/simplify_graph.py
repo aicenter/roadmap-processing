@@ -20,7 +20,7 @@ def simplify_geojson():
 
 	# l_check set True whether you don't want to simplify edges with different number of lanes
 	# c_check set True whether you don't want to simplify edges with different curvature
-	geojson_file = roadmaptools.inout.load_geojson(config.cleaned_geojson_file)
+	geojson_file = roadmaptools.inout.load_geojson(config.sanitized_geojson_file)
 
 	print_info("Simplification process started")
 	geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)

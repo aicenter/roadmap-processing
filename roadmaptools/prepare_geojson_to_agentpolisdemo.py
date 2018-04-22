@@ -1,10 +1,12 @@
-from __future__ import division
+from roadmaptools.init import config
+
 from geojson import LineString, Feature
 import networkx as nx
 import codecs
-from simplify_graph import load_geojson, prepare_to_saving_optimized, save_geojson
+import roadmaptools.inout
+from roadmaptools.simplify_graph import prepare_to_saving_optimized
 import copy
-from export_nodes_and_id_maker import export_points_to_geojson, get_ids
+from roadmaptools.export_nodes_and_id_maker import export_points_to_geojson, get_ids
 import sys
 import argparse
 import roadmaptools.sanitize
@@ -15,7 +17,7 @@ temp_features = list()
 
 def traverse_and_create_graph(g, subgraph):
     temp_g = nx.MultiDiGraph()
-    for n, nbrsdict in g.adjacency_iter():
+    for n, nbrsdict in list(g.adjacency()):
         if n in subgraph:
             for nbr, keydict in nbrsdict.items():
                 if nbr in subgraph:
@@ -48,7 +50,7 @@ def get_node(node):
 
 def detect_parallel_edges(g):
     set_of_edges = set()
-    for n, nbrsdict in g.adjacency_iter():
+    for n, nbrsdict in list(g.adjacency()):
         for nbr, keydict in nbrsdict.items():
             for key, d in keydict.items():
                 if key != 0:
@@ -134,37 +136,37 @@ def create_DiGraph(g):
     return temp_gr
 
 
-def prepare_graph_to_agentpolisdemo(input_stream, output_stream):
-    json_dict = load_geojson(input_stream)
+def prepare_graph_to_agentpolisdemo():
+    json_dict = roadmaptools.inout.load_geojson(config.simplified_file_with_speed)
     graph = load_graph(json_dict)
-    biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
-    new_graph = traverse_and_create_graph(graph, biggest_subgraph)
+    # biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
+    # new_graph = traverse_and_create_graph(graph, biggest_subgraph)
 
-    detect_parallel_edges(new_graph)
+    # detect_parallel_edges(new_graph)
     id_iter = find_max_id(json_dict) + 1  # new id iterator
     for edge in temp_edges:
         add_new_edges(json_dict, edge, id_iter)
         id_iter += 2
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    prepare_to_saving_optimized(new_graph, json_dict)
+    prepare_to_saving_optimized(graph, json_dict)
     json_dict['features'].extend(temp_features)
     get_ids(json_dict)
     nodes = export_points_to_geojson(json_dict)
     # print len(json_dict['features'])
     # output_stream = open("/home/martin/MOBILITY/GITHUB/smaz/agentpolis-demo/python_scripts/data/nodes.geojson",'w')
-    # save_geojson(nodes, output_stream)
+    roadmaptools.inout.save_geojson(nodes, config.ap_nodes_file)
     # output_stream.close()
     # for item in json_dict['features']:
     #     item['properties']['length']=1
     #     item['properties']['speed']=1
     # output_stream = open("/home/martin/MOBILITY/GITHUB/smaz/agentpolis-demo/python_scripts/data/edges.geojson",'w')
-    save_geojson(json_dict, output_stream)
+    roadmaptools.inout.save_geojson(json_dict, config.ap_edges_file)
     # output_stream.close()
 
 
 def get_nodes_and_edges_for_agentpolisdemo(json_dict):
     graph = load_graph(json_dict)
-    biggest_subgraph = get_biggest_component(graph)
+    biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
     new_graph = traverse_and_create_graph(graph, biggest_subgraph)
 
     detect_parallel_edges(new_graph)

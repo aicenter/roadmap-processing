@@ -42,7 +42,7 @@ def load_graph(json_dict):
 def export_points_to_geojson(json_dict):
     g = load_graph(json_dict)
     list_of_features = []
-    for n in g.nodes_iter():
+    for n in g.nodes():
         node_id = roadmaptools.graph.get_node_id(n)
         point = Point(n)
         feature = Feature(geometry=point, properties={'node_id': node_id})

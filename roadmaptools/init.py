@@ -11,7 +11,8 @@ CC = TypeVar('CC', bound=Config)
 config = RoadmaptoolsConfig()
 
 
-def load_config(client_config: CC, key_in_client: str, client_local_config: str = None):
-    configuration.load(config, client_config, client_local_config, key_in_client)
+def load_config(client_config: CC, key_in_client: str, client_local_config: str = None,
+                client_config_file_path: str=None):
+    configuration.load(config, client_config, client_config_file_path, client_local_config, key_in_client)
     return config
 

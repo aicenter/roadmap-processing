@@ -16,13 +16,14 @@ def filter_osm_file():
 	start_time = time.time()
 
 	if check_osmfilter():
-		params = '--keep="highway=motorway =motorway_link =trunk =trunk_link =primary =primary_link =secondary' \
-				 ' =secondary_link =tertiary =tertiary_link =unclassified =unclassified_link =residential =residential_link' \
-				 ' =living_street" --drop="access=no"'
+		# params = '--keep="highway=motorway =motorway_link =trunk =trunk_link =primary =primary_link =secondary' \
+		# 		 ' =secondary_link =tertiary =tertiary_link =unclassified =unclassified_link =residential =residential_link' \
+		# 		 ' =living_street" --drop="access=no"'
+		params = config.osm_filter_params
 
 		command = './osmfilter' if platform.system() == 'Linux' else 'osmfilter.exe'
 
-		filter_command = '%s %s %s > %s' % (command, config.osm_map_filename, params, config.filtered_osm_filename)
+		filter_command = '%s "%s" %s > "%s"' % (command, config.osm_map_filename, params, config.filtered_osm_filename)
 		os.system(filter_command)
 	else:
 		print_info('Osmfilter not available. Exiting.')
@@ -52,7 +53,7 @@ def check_osmfilter():
 		if not os.path.exists(executable):
 			print_info('Downloading and compiling osmfilter... ')
 			try:
-				subprocess.call(['wget', 'http://m.m.i24.cc/osmfilter.exe', '--no-check-certificate'])
+				subprocess.call(['wget', 'http://m.m.i24.cc/osmfilter.exe'])
 			except OSError as e:
 				if e.errno == os.errno.ENOENT:
 					print_err('wget not found! Please, install it.')  # handle file not found error
