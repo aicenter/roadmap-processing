@@ -34,6 +34,7 @@ class TransposedUTM:
 
 # Project to Euclidean plane such that the units are meters.
 default_projection = TransposedUTM(config.utm_center_lon, config.utm_center_lat)
+# default_projection = None
 
 
 def np_wgs84_to_utm(latlon, projection: TransposedUTM=default_projection):

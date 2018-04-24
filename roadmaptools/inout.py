@@ -3,6 +3,7 @@ import os
 import bz2
 import sys
 import pickle
+import json
 import geojson
 import geojson.feature
 import networkx as nx
@@ -10,7 +11,7 @@ import csv
 import gpxpy
 import gpxpy.gpx
 
-from typing import Iterable, Callable, Dict, Tuple, List
+from typing import Iterable, Callable, Dict, Tuple, List, Union
 from tqdm import tqdm
 from logging import info
 from gpxpy.gpx import GPX
@@ -65,6 +66,11 @@ def get_osm_from_mapzen():
 	download_file(config.osm_source_url, config.osm_map_filename + ".bz2")
 	extract_file(config.osm_map_filename + ".bz2")
 	print_info("Map from mapzen ready.")
+
+
+def load_json(filepath: str) -> Union[Dict, List]:
+	print_info("Loading json file from: {}".format(os.path.realpath(filepath)))
+	return json.load(open(filepath))
 
 
 def load_geojson(filepath: str) -> geojson.feature.FeatureCollection:
