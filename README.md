@@ -1,56 +1,12 @@
 # roadmap-processing
 
-Python's tool for processing mostly geoJSON files and also OSM files. 
+A Python package with utilities for pre-processing of road networks stored in geoJSON and OSM formats. 
 
 ### Prerequisites
 
-We will work with [pip](https://pypi.python.org/pypi/pip), [wget](https://www.gnu.org/software/wget/) and [virtualenv](https://virtualenv.pypa.io/en/stable/)(optional). You can follow steps below to install it properly.
+We assume you have Python >3.6, pip, and virtualenv installed.
 
 ### Installing
-
-Use
-
-```
-python get-pip.py
-```
-
-for installing pip and
-
-```
-sudo pip install virtualenv
-```
-
-for virtualenv or eventually on Windows use
-
-
-```
-pip install virtualenv
-```
-
-If you are running in Linux, type
-
-
-```
-mkdir ~/virtualEnvironment && cd ~/virtualEnvironment
-```
-
-then clone this GitHub project
-
-```
-git clone https://github.com/aicenter/roadmap-processing.git
-```
-or clone with ssh
-```
-git clone git@github.com:aicenter/roadmap-processing.git
-```
-
-and finally use
-
-```
-virtualenv --python path/to/python2.7/interpreter --no-site-packages --distribute .env && source .env/bin/activate
-```
-
-where you subtitute path/to/python2.7/interpreter with your own path to python 2.7 interpreter to create isolated Python environment.
 
 This project is also available on PyPI and it is recommended install it as package
 
@@ -58,21 +14,26 @@ This project is also available on PyPI and it is recommended install it as packa
 pip install roadmaptools
 ```
 
+### Developing
+
+First, setup an isolated Python environment using virtualenv: 
+
+```
+virtualenv -p python3.6 virtenv
+source virtenv/bin/activate
+```
+
 ## Examples of usage
 
-Almost in every script there are two ways how to run it or get resulting geoJSON.
-
-osmtogeojson (description: convert OSM file to geoJSON file)
-
+Convert OSM to Geojson:
 ```python
-   from roadmaptools import osmtogejson
+from roadmaptools.osm import osm_to_geojson
+from roadmaptools.geojson import save_geojson
 
-   geojson_file = osmtogeojson.convert_osmtogeojson("path/to/OSMfile.osm")
-   osmtogeojson.is_geojson_valid(geojson_file) # return 'yes' or 'no'
-   f = open("path/to/output_file.geojson","w")
-   osmtogeojson.save_geojson(geojson_file,f)
-   f.close()
+gj = osm_to_geojson('test_data/techobuz.osm', keep_tags={'highway', 'oneway'})
+save_geojson(gj, 'test_data/techobuz.geojson')
 ```
+
 
 clean_geojson (description: get only LineStrings, where everyone has only 2 coordinates; check important features, whether are meaningful)
 
@@ -181,8 +142,6 @@ prepare_geojson_to_agentpolisdemo (description: get the biggest strongly connect
 We use [GitHub](https://github.com) for versioning. For the versions available, see the [tags on this repository](https://github.com/aicenter/roadmap-processing/tags). 
 
 ## Authors
-
-* **Martin Korytak** - *Initial work*
 
 See also the list of [contributors](https://github.com/aicenter/roadmap-processing/graphs/contributors) who participated in this project.
 
