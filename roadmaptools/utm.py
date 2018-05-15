@@ -58,3 +58,12 @@ def utm_to_wgs84(latitude: float, longitude: float, projection: TransposedUTM=de
 def get_id_from_utm_coords(x: float, y: float) -> int:
 	y_int = int(round(y, 3) * 1000)
 	return int(round(x, 3) * 1000) * int(math.pow(10, len(str(y_int)))) + y_int
+
+
+class CoordinateConvertor:
+
+	projection = default_projection
+
+	@staticmethod
+	def convert(latitude: float, longitude: float) -> Tuple[float,float]:
+		return wgs84_to_utm(latitude, longitude, CoordinateConvertor.projection)
