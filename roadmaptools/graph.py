@@ -1,5 +1,6 @@
 from networkx import DiGraph
 from shapely.geometry import Point
+from scipy.spatial.kdtree import KDTree
 from roadmaptools.road_structures import LinestringEdge
 
 
@@ -18,6 +19,13 @@ def get_node_id(node) -> str:
 
 class RoadGraph:
 
-	def get_precise_path_length(graph: DiGraph, edge_from: LinestringEdge, edge_to: LinestringEdge, point_from: Point,
-							point_to: Point):
-	from_node =
+	def __init__(self):
+		self.graph: DiGraph = None
+		self.kdtree: KDTree = None
+
+	def get_precise_path_length(self, edge_from: LinestringEdge, edge_to: LinestringEdge, 
+								point_from: Point, point_to: Point):
+		from_node = self._get_node_for_path_search(edge_from, point_from)
+
+	def _get_node_for_path_search(self, edge_from, point_from):
+		pass
