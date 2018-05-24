@@ -1,5 +1,5 @@
 from typing import Callable
-from gpxpy.gpx import GPX, GPXTrackPoint
+from gpxpy.gpx import GPX, GPXTrackPoint, GPXTrack
 from tqdm import tqdm
 
 
@@ -43,3 +43,9 @@ def filter_gpx(gpx_content: GPX, filter: Callable[[GPXTrackPoint, GPXTrackPoint]
 	print("Removed tracks: {}".format(removed_tracks_count))
 
 	return gpx_content
+
+
+def cut_trace(trace: GPXTrack, length: int) -> GPXTrack:
+	segment = trace.segments[0]
+	segment.points = segment.points[:length]
+	return trace

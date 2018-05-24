@@ -1,11 +1,19 @@
+import sys
+# print(sys.path)
+
+# this fixes the geojson name clash, because python does not provide a realy working absolute imports
+# current_dir = sys.path[0]
+# sys.path = sys.path[1:]
+import geojson
+import geojson.feature
+# sys.path = [current_dir] + sys.path
+
 import urllib.request
 import os
 import bz2
 import sys
 import pickle
 import json
-import geojson
-import geojson.feature
 import networkx as nx
 import csv
 import gpxpy

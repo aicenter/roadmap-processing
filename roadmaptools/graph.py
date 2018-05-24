@@ -3,7 +3,7 @@ import roadmaptools.utm
 import roadmaptools.geometry
 import roadmaptools.shp
 
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, List
 from networkx import DiGraph
 from shapely.geometry import Point
 from scipy.spatial.kdtree import KDTree
@@ -79,7 +79,7 @@ class RoadGraph:
 								point_from: Point, point_to: Point) -> Optional[float]:
 		from_node = edge_from.node_to
 		to_node = edge_to.node_from
-		
+
 		if edge_from == edge_to:
 			length = roadmaptools.shp.distance_on_linestring_between_points(edge_from.linestring, point_from, point_to)
 		else:
@@ -93,5 +93,23 @@ class RoadGraph:
 
 		return length
 
-	def _get_node_for_path_search(self, edge_from, point_from):
-		pass
+	def get_edge_path_between_edges(self, edge_from: LinestringEdge, edge_to: LinestringEdge) -> List[LinestringEdge]:
+		edge_list = []
+
+		from_node = edge_from.node_to
+		to_node = edge_to.node_from
+		node_list: List[Node] = networkx.algorithms.shortest_paths.astar_path(self.graph, from_node, to_node, weight="length")
+		index = 1
+		from_node = node_list[0]
+		to_node = node_list[index]
+		while True:
+			edge = self.graph[from_node][to_node]["edge"]
+			edge_list.append(edge)
+
+			index += 1
+			if index == len(node_list):
+				break
+			from_node = to_node
+			to_node = node_list[index]
+
+		return edge_list
