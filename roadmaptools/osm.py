@@ -8,6 +8,160 @@ from roadmaptools.util import filter_dict
 DEFAULT_KEEP_TAGS = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel',
                 'traffic_calming', 'lanes:forward', 'lanes:backward', 'junction'}
 
+import sys
+from datetime import datetime
+from time import mktime
+try:
+    from lxml.etree import iterparse
+except ImportError:
+    from xml.etree.ElementTree import iterparse
+
+from osmread.parser import Parser
+from osmread.elements import Node, Way, Relation, RelationMember
+
+# Support for Python 3.x & 2.x
+if sys.version_info > (3,):
+    long = int
+    unicode = str
+
+class CustomXmlParser(Parser):
+
+    def __init__(self, **kwargs):
+        Parser.__init__(self, **kwargs)
+        self._compression = kwargs.get('compression', None)
+
+    def parse(self, fp):
+        context = iterparse(fp, events=('start', 'end'))
+
+        # common
+        _type = None
+        _id = None
+        _version = None
+        _changeset = None
+        _timestamp = None
+        _uid = None
+        _tags = None
+        # node only
+        _lon = None
+        _lat = None
+        # way only
+        _nodes = None
+        # relation only
+        _members = None
+
+        for event, elem in context:
+
+            if event == 'start':
+                attrs = elem.attrib
+                if elem.tag in ('node', 'way', 'relation'):
+                    _id = long(attrs['id'])
+                    if 'version' in attrs:
+                        _version = int(attrs['version'])
+                    if 'changeset' in attrs:
+                        _changeset = int(attrs['changeset'])
+                    # TODO: improve timestamp parsing - dateutil too slow
+                    if 'timestamp' in attrs:
+                        _tstxt = attrs['timestamp']
+                        _timestamp = int((
+                            datetime(
+                                year=int(_tstxt[0:4]),
+                                month=int(_tstxt[5:7]),
+                                day=int(_tstxt[8:10]),
+                                hour=int(_tstxt[11:13]),
+                                minute=int(_tstxt[14:16]),
+                                second=int(_tstxt[17:19]),
+                                tzinfo=None
+                            ) - datetime(
+                                year=1970,
+                                month=1,
+                                day=1,
+                                tzinfo=None
+                            )
+                        ).total_seconds())
+
+                    try: #An object can miss an uid (when anonymous edits were possible)
+                        _uid = int(attrs['uid'])
+                    except:
+                        uid = 0
+
+                    _tags = {}
+
+                    if elem.tag == 'node':
+                        _type = Node
+                        _lon = float(attrs['lon'])
+                        _lat = float(attrs['lat'])
+                    elif elem.tag == 'way':
+                        _type = Way
+                        _nodes = []
+                    elif elem.tag == 'relation':
+                        _type = Relation
+                        _members = []
+
+                elif elem.tag == 'tag':
+                    _tags[unicode(attrs['k'])] = unicode(attrs['v'])
+
+                elif elem.tag == 'nd':
+                    _nodes.append(long(attrs['ref']))
+
+                elif elem.tag == 'member':
+                    _members.append(
+                        RelationMember(
+                            unicode(attrs['role']),
+                            {
+                                'node': Node,
+                                'way': Way,
+                                'relation': Relation
+                            }[attrs['type']],
+                            long(attrs['ref'])
+                        )
+                    )
+
+            elif event == 'end':
+                if elem.tag in ('node', 'way', 'relation'):
+                    args = [
+                        _id, _version, _changeset,
+                        _timestamp, _uid, _tags
+                    ]
+
+                    if elem.tag == 'node':
+                        args.extend((_lon, _lat))
+
+                    elif elem.tag == 'way':
+                        args.append(tuple(_nodes))
+
+                    elif elem.tag == 'relation':
+                        args.append(tuple(_members))
+
+                    elem.clear()
+
+                    yield _type(*args)
+
+
+def parse_file(filename, **kwargs):
+    parser_cls = None
+    kwargs = dict(kwargs)
+
+    if filename.endswith(('.osm', '.xml', '.osm.bz2', '.xml.bz2')) \
+            or kwargs.get('format', None) == 'xml':
+
+        from osmread.parser.xml import XmlParser
+        parser_cls = CustomXmlParser
+
+        if filename.endswith('.bz2'):
+            kwargs['compression'] = 'bz2'
+
+    elif filename.endswith('.pbf') \
+            or kwargs.get('format', None) == 'pbf':
+
+        from osmread.parser.pbf import PbfParser
+        parser_cls = PbfParser
+
+    parser = parser_cls(**kwargs)
+
+    for e in parser.parse_file(filename):
+        yield e
+
+
 def osm_to_geojson(filename, keep_tags='all'):
     """
     Converts Ways in OSM data (stored in a file) into Points and LineString geojson features.
@@ -34,7 +188,7 @@ def osm_to_geojson(filename, keep_tags='all'):
 
     # Collect all OSM nodes
     dict_of_coords = dict()
-    osm_generator = osmread.parse_file(filename)
+    osm_generator = parse_file(filename)
 
     for item in osm_generator:
         if isinstance(item, osmread.Node):
@@ -42,7 +196,7 @@ def osm_to_geojson(filename, keep_tags='all'):
 
     # Collect relevant features
     feature_collection = []
-    osm_generator = osmread.parse_file(filename) # generator!!
+    osm_generator = parse_file(filename) # generator!!
 
     for item in osm_generator:
         if isinstance(item, osmread.Node) and item.tags != {}:
