@@ -97,3 +97,15 @@ def extend_vector(from_coord: Tuple[float, float], to_coord: Tuple[float, float]
 	new_x = from_coord[0] + cos * new_length
 	extension_point = (new_x, new_y)
 	return extension_point
+
+
+def get_angle_between_points(point_from: Point, point_to: Point) -> float:
+	y = point_to.y - point_from.y
+	x = point_to.x - point_from.x
+
+	angle = math.atan2(y, x)
+
+	# transformation from (-pi, pi) to (0, 2pi)
+	angle_trans = angle if angle > 0 else 2 * math.pi - abs(angle)
+
+	return angle_trans
