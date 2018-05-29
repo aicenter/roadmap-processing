@@ -3,7 +3,7 @@ import geojson
 import sys
 import os.path
 
-from typing import Tuple
+from typing import Tuple, List
 from rtree import index
 from tqdm import tqdm
 from networkx import DiGraph
@@ -57,4 +57,6 @@ class RoadGraphRtree:
 			print_info("solution does not have to be exact")
 
 		return nearest
+
+	def get_edges_in_area(self) -> List[Line]:
 
