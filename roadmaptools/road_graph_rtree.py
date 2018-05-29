@@ -9,16 +9,18 @@ from tqdm import tqdm
 from networkx import DiGraph
 from shapely.geometry import Polygon, Point
 from roadmaptools.printer import print_info
+from roadmaptools.road_structures import LinestringEdge
+from roadmaptools.graph import RoadGraph
 
 
 class RoadGraphRtree:
 
-	def __init__(self, road_graph: DiGraph, search_size: int=500, path: str=None):
+	def __init__(self, road_graph: RoadGraph, search_size: int=500, path: str=None):
 		self.search_size = search_size
 		self.index = self._build_index(road_graph, path)
 
 	@staticmethod
-	def _build_index(road_graph: DiGraph, path: str=None):
+	def _build_index(road_graph: RoadGraph, path: str=None):
 		if path:
 			cache_ready = os.path.isfile(path + ".idx")
 			idx = index.Index(path)
@@ -27,7 +29,7 @@ class RoadGraphRtree:
 			idx = index.Index()
 		if not cache_ready:
 			print_info("Creating R-tree from geojson roadmap")
-			for u,v,data in tqdm(road_graph.edges(data=True), desc="processing edges"):
+			for u, v, data in tqdm(road_graph.graph.edges(data=True), desc="processing edges"):
 				data["attr"]["from"] = u
 				data["attr"]["to"] = v
 				idx.insert(data["id"], data["attr"]["shape"].bounds, data)
@@ -58,5 +60,6 @@ class RoadGraphRtree:
 
 		return nearest
 
-	def get_edges_in_area(self) -> List[Line]:
-
+	def get_edges_in_area(self, area_bounds: Tuple[float, float, float, float]) -> List[LinestringEdge]:
+		edges_in_area = self.index.intersection(area_bounds, objects='raw')
+		return edges_in_area
