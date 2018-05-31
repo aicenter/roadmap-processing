@@ -29,10 +29,11 @@ class RoadGraphRtree:
 			idx = index.Index()
 		if not cache_ready:
 			print_info("Creating R-tree from geojson roadmap")
-			for u, v, data in tqdm(road_graph.graph.edges(data=True), desc="processing edges"):
-				data["attr"]["from"] = u
-				data["attr"]["to"] = v
-				idx.insert(data["id"], data["attr"]["shape"].bounds, data)
+			for from_node, to_node, data in tqdm(road_graph.graph.edges(data=True), desc="processing edges"):
+				edge: LinestringEdge = data["edge"]
+				# data["attr"]["from"] = from_node
+				# data["attr"]["to"] = to_node
+				idx.insert(data["id"], edge.linestring.bounds, edge)
 			if path:
 				idx.close()
 				idx = index.Index(path)
@@ -44,8 +45,8 @@ class RoadGraphRtree:
 		min_distance = sys.maxsize
 		nearest = None
 		for candidate in candidates:
-			edge = candidate["attr"]
-			distance = point.distance(edge["shape"])
+			edge: LinestringEdge = candidate
+			distance = point.distance(edge.linestring)
 			if distance < min_distance:
 				min_distance = distance
 				nearest = edge
@@ -55,11 +56,17 @@ class RoadGraphRtree:
 
 		envelope = Polygon(((search_bounds[0], search_bounds[3]), (search_bounds[2], search_bounds[3]),
 						   (search_bounds[2], search_bounds[1]), (search_bounds[0], search_bounds[1])))
-		if not envelope.intersects(nearest["shape"]):
+		if not envelope.intersects(nearest.linestring):
 			print_info("solution does not have to be exact")
 
 		return nearest
 
-	def get_edges_in_area(self, area_bounds: Tuple[float, float, float, float]) -> List[LinestringEdge]:
-		edges_in_area = self.index.intersection(area_bounds, objects='raw')
+	def get_edges_in_area(self, area_bounds: Polygon) -> List[LinestringEdge]:
+		# edges whose bounding box intersects the area
+		potential_edges_in_area = self.index.intersection(area_bounds.bounds, objects='raw')
+
+		edges_in_area = []
+		for candidate in potential_edges_in_area:
+			if area_bounds.intersects(candidate.linestring):
+				edges_in_area.append(candidate)
 		return edges_in_area
