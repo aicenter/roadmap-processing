@@ -61,6 +61,8 @@ class RoadGraph:
 			self.graph = DiGraph(zone_number=self.projection.origin_zone_number,
 								 zone_letter=self.projection.origin_zone_letter)
 
+			edge_counter = 0
+
 			print_info("Creating networkx graph from geojson")
 			for item in tqdm(geojson['features'], desc="processing features"):
 				if item["geometry"]["type"] == "LineString":
@@ -77,7 +79,16 @@ class RoadGraph:
 					edge_id = item['properties']['id'] if "id" in item['properties'] else item['id']
 					length = item['properties']['length'] if 'length' in item['properties'] \
 						else roadmaptools.geometry.get_distance(coord_from, coord_to)
+
+					if node_from in self.graph and node_to in self.graph[node_from]:
+						a = 1
+
 					self.graph.add_edge(node_from, node_to, id=edge_id, length=length, edge=edge)
+
+					edge_counter +=1
+
+			if edge_counter != len(self.graph.edges):
+				a = 1
 
 			if self.use_cache:
 				networkx.write_gpickle(self.graph, self.cache_filepath)
