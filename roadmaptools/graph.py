@@ -1,7 +1,9 @@
+import os.path
 import networkx.algorithms.shortest_paths
 import roadmaptools.utm
 import roadmaptools.geometry
 import roadmaptools.shp
+import roadmaptools.inout
 
 from typing import Dict, Union, Optional, List
 from networkx import DiGraph
@@ -29,38 +31,56 @@ def get_node_id(node) -> str:
 
 class RoadGraph:
 
-	def __init__(self):
-		self.graph: DiGraph = DiGraph()
+	def __init__(self, use_cache: bool=True, cache_filepath: str=""):
+		self.use_cache = use_cache
+		self.cache_filepath = cache_filepath
+		self.graph: DiGraph = None
 		self.kdtree: KDTree = None
 		self.projection = None
 		self.node_map: Dict[int, Node] = {}
 
-	def load_from_geojson(self, geojson: FeatureCollection):
+	def load_from_geojson(self, geojson_filepath: str):
+		if self.use_cache and os.path.exists(self.cache_filepath):
+			self.graph = networkx.read_gpickle(self.cache_filepath)
+			self.projection = roadmaptools.utm.TransposedUTM.from_zone(self.graph.graph["zone_number"],
+																	   self.graph.graph["zone_letter"])
+			CoordinateConvertor.projection = self.projection
 
-		# projection determination
-		first_coord = geojson['features'][0]['geometry']['coordinates']
-		self.projection = roadmaptools.utm.TransposedUTM(first_coord[1], first_coord[0])
-		print_info("Projection determined from the first coordinate: {}{}".format(
-			self.projection.origin_zone_number, self.projection.origin_zone_letter))
-		CoordinateConvertor.projection = self.projection
+			print_info("Projection loaded from the cache: {}{}".format(
+				self.projection.origin_zone_number, self.projection.origin_zone_letter))
+		else:
+			geojson = roadmaptools.inout.load_geojson(geojson_filepath)
 
-		print_info("Creating networkx graph from geojson")
-		for item in tqdm(geojson['features'], desc="processing features"):
-			if item["geometry"]["type"] == "LineString":
-				coords = item['geometry']['coordinates']
-				coord_from = roadmaptools.utm.wgs84_to_utm(coords[0][1], coords[0][0], self.projection)
-				coord_to = roadmaptools.utm.wgs84_to_utm(coords[-1][1], coords[-1][0], self.projection)
+			# projection determination
+			first_coord = geojson['features'][0]['geometry']['coordinates']
+			self.projection = roadmaptools.utm.TransposedUTM.from_gps(first_coord[1], first_coord[0])
+			print_info("Projection determined from the first coordinate: {}{}".format(
+				self.projection.origin_zone_number, self.projection.origin_zone_letter))
+			CoordinateConvertor.projection = self.projection
 
-				node_from = self._get_node(coord_from[0], coord_from[1])
-				node_to = self._get_node(coord_to[0], coord_to[1])
+			self.graph = DiGraph(zone_number=self.projection.origin_zone_number,
+								 zone_letter=self.projection.origin_zone_letter)
 
-				edge = LinestringEdge(item, CoordinateConvertor.convert, node_from, node_to)
+			print_info("Creating networkx graph from geojson")
+			for item in tqdm(geojson['features'], desc="processing features"):
+				if item["geometry"]["type"] == "LineString":
+					coords = item['geometry']['coordinates']
+					coord_from = roadmaptools.utm.wgs84_to_utm(coords[0][1], coords[0][0], self.projection)
+					coord_to = roadmaptools.utm.wgs84_to_utm(coords[-1][1], coords[-1][0], self.projection)
 
-				# TODO legacy, remove after moving id from properties to id attribute
-				edge_id = item['properties']['id'] if "id" in item['properties'] else item['id']
-				length = item['properties']['length'] if 'length' in item['properties'] \
-					else roadmaptools.geometry.get_distance(coord_from, coord_to)
-				self.graph.add_edge(node_from, node_to, id=edge_id, length=length, edge=edge)
+					node_from = self._get_node(coord_from[0], coord_from[1])
+					node_to = self._get_node(coord_to[0], coord_to[1])
+
+					edge = LinestringEdge(item, CoordinateConvertor.convert, node_from, node_to)
+
+					# TODO legacy, remove after moving id from properties to id attribute
+					edge_id = item['properties']['id'] if "id" in item['properties'] else item['id']
+					length = item['properties']['length'] if 'length' in item['properties'] \
+						else roadmaptools.geometry.get_distance(coord_from, coord_to)
+					self.graph.add_edge(node_from, node_to, id=edge_id, length=length, edge=edge)
+
+			if self.use_cache:
+				networkx.write_gpickle(self.graph, self.cache_filepath)
 
 	def _get_node(self, x: float, y: float) -> Node:
 		id = roadmaptools.utm.get_id_from_utm_coords(x, y)
