@@ -5,7 +5,7 @@ import roadmaptools.geometry
 import roadmaptools.shp
 import roadmaptools.inout
 
-from typing import Dict, Union, Optional, List
+from typing import Dict, Union, Optional, List, Callable
 from networkx import DiGraph
 from shapely.geometry import Point
 from scipy.spatial.kdtree import KDTree
@@ -29,11 +29,16 @@ def get_node_id(node) -> str:
 		return str(lon) + str(lat)
 
 
+def _create_node(x: float, y: float, id: int) -> Node:
+	return Node(x, y, id)
+
 class RoadGraph:
 
-	def __init__(self, use_cache: bool=True, cache_filepath: str=""):
+	def __init__(self, use_cache: bool=True, cache_filepath: str="",
+				 node_creator: Callable[[float, float, int], Node]=_create_node):
 		self.use_cache = use_cache
 		self.cache_filepath = cache_filepath
+		self.node_creator = node_creator
 		self.graph: DiGraph = None
 		self.kdtree: KDTree = None
 		self.projection = None
@@ -98,13 +103,11 @@ class RoadGraph:
 		if id in self.node_map:
 			return self.node_map[id]
 		else:
-			node = self._create_node(x, y, id)
+			node = self.node_creator(x, y, id)
 			self.node_map[id] = node
 			return node
 
-	@staticmethod
-	def _create_node(x: float, y: float, id: int) -> Node:
-		return Node(x, y, id)
+
 
 	def get_precise_path_length(self, edge_from: LinestringEdge, edge_to: LinestringEdge, 
 								point_from: Point, point_to: Point) -> Optional[float]:

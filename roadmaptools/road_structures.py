@@ -20,10 +20,14 @@ class Node:
 		return self._point
 
 	def __eq__(self, o: object) -> bool:
-		return self.id == o.id
+		if isinstance(o, self.__class__):
+			return self.id == o.id
+		return False
 
 	def __ne__(self, o: object) -> bool:
-		return self.id != o.id
+		if isinstance(o, self.__class__):
+			return self.id != o.id
+		return False
 
 	def __hash__(self) -> int:
 		return hash(self.id)
@@ -41,10 +45,14 @@ class LinestringEdge:
 		self.id = str(node_from.id) + "-" + str(node_to.id)
 
 	def __eq__(self, o: object) -> bool:
-		return self.id == o.id
+		if isinstance(o, self.__class__):
+			return self.id == o.id
+		return False
 
 	def __ne__(self, o: object) -> bool:
-		return self.id != o.id
+		if isinstance(o, self.__class__):
+			return self.id != o.id
+		return False
 
 	def __hash__(self) -> int:
 		return hash(self.id)
