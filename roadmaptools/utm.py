@@ -1,9 +1,10 @@
 import math
 import utm
 import numpy as np
+import roadmaptools.config.roadmaptools_config as rc
 
 from typing import Tuple
-from roadmaptools.init import config
+# from roadmaptools.init import config
 
 
 class TransposedUTM:
@@ -39,20 +40,20 @@ class TransposedUTM:
 
 	def wgs84_to_utm(self, lat, lon):
 		easting, northing, _, _ = utm.from_latlon(lat, lon, force_zone_number=self.origin_zone_number)
-		if config.shift_utm_coordinate_origin_to_utm_center:
+		if rc.config.shift_utm_coordinate_origin_to_utm_center:
 			easting -= self.origin_easting
 			northing -= self.origin_northing
 		return easting, northing
 
 	def utm_to_wgs84(self, easting, northing):
-		if config.shift_utm_coordinate_origin_to_utm_center:
+		if rc.config.shift_utm_coordinate_origin_to_utm_center:
 			easting += self.origin_easting
 			northing += self.origin_northing
 		return utm.to_latlon(easting, northing, self.origin_zone_number, self.origin_zone_letter)
 
 
 # Project to Euclidean plane such that the units are meters.
-default_projection = TransposedUTM.from_gps(config.utm_center_lon, config.utm_center_lat)
+default_projection = TransposedUTM.from_gps(rc.config.utm_center_lon, rc.config.utm_center_lat)
 # default_projection = None
 
 
