@@ -57,7 +57,7 @@ class RoadGraph:
 			geojson = roadmaptools.inout.load_geojson(geojson_filepath)
 
 			# projection determination
-			first_coord = geojson['features'][0]['geometry']['coordinates']
+			first_coord = geojson['features'][0]['geometry']['coordinates'][0]
 			self.projection = roadmaptools.utm.TransposedUTM.from_gps(first_coord[1], first_coord[0])
 			print_info("Projection determined from the first coordinate: {}{}".format(
 				self.projection.origin_zone_number, self.projection.origin_zone_letter))

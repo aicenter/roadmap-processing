@@ -14,59 +14,58 @@ from roadmaptools.graph import RoadGraph
 
 
 class RoadGraphRtree:
+    def __init__(self, road_graph: RoadGraph, search_size: int = 500, path: str = None):
+        self.search_size = search_size
+        self.index = self._build_index(road_graph, path)
 
-	def __init__(self, road_graph: RoadGraph, search_size: int=500, path: str=None):
-		self.search_size = search_size
-		self.index = self._build_index(road_graph, path)
+    @staticmethod
+    def _build_index(road_graph: RoadGraph, path: str = None):
+        if path:
+            cache_ready = os.path.isfile(path + ".idx")
+            idx = index.Index(path)
+        else:
+            cache_ready = False
+            idx = index.Index()
+        if not cache_ready:
+            print_info("Creating R-tree from geojson roadmap")
+            for from_node, to_node, data in tqdm(road_graph.graph.edges(data=True), desc="processing edges"):
+                edge: LinestringEdge = data["edge"]
+                # data["attr"]["from"] = from_node
+                # data["attr"]["to"] = to_node
+                idx.insert(data["id"], edge.linestring.bounds, edge)
+            if path:
+                idx.close()
+                idx = index.Index(path)
+        return idx
 
-	@staticmethod
-	def _build_index(road_graph: RoadGraph, path: str=None):
-		if path:
-			cache_ready = os.path.isfile(path + ".idx")
-			idx = index.Index(path)
-		else:
-			cache_ready = False
-			idx = index.Index()
-		if not cache_ready:
-			print_info("Creating R-tree from geojson roadmap")
-			for from_node, to_node, data in tqdm(road_graph.graph.edges(data=True), desc="processing edges"):
-				edge: LinestringEdge = data["edge"]
-				# data["attr"]["from"] = from_node
-				# data["attr"]["to"] = to_node
-				idx.insert(data["id"], edge.linestring.bounds, edge)
-			if path:
-				idx.close()
-				idx = index.Index(path)
-		return idx
+    def get_nearest_edge(self, point: Point):
+        search_bounds = Point(point).buffer(self.search_size).bounds
+        candidates = self.index.intersection(search_bounds, objects='raw')
+        min_distance = sys.maxsize
+        nearest = None
+        for candidate in candidates:
+            edge: LinestringEdge = candidate
+            distance = point.distance(edge.linestring)
+            if distance < min_distance:
+                min_distance = distance
+                nearest = edge
 
-	def get_nearest_edge(self, point: Point):
-		search_bounds = Point(point).buffer(self.search_size).bounds
-		candidates = self.index.intersection(search_bounds, objects='raw')
-		min_distance = sys.maxsize
-		nearest = None
-		for candidate in candidates:
-			edge: LinestringEdge = candidate
-			distance = point.distance(edge.linestring)
-			if distance < min_distance:
-				min_distance = distance
-				nearest = edge
+        if not nearest:
+            print_info("No edge found in specified distance ({} m).".format(self.search_size))
 
-		if not nearest:
-			print_info("No edge found in specified distance ({} m).".format(self.search_size))
+        envelope = Polygon(((search_bounds[0], search_bounds[3]), (search_bounds[2], search_bounds[3]),
+                            (search_bounds[2], search_bounds[1]), (search_bounds[0], search_bounds[1])))
+        if not envelope.intersects(nearest.linestring):
+            print_info("solution does not have to be exact")
 
-		envelope = Polygon(((search_bounds[0], search_bounds[3]), (search_bounds[2], search_bounds[3]),
-						   (search_bounds[2], search_bounds[1]), (search_bounds[0], search_bounds[1])))
-		if not envelope.intersects(nearest.linestring):
-			print_info("solution does not have to be exact")
+        return nearest
 
-		return nearest
+    def get_edges_in_area(self, area_bounds: Polygon) -> List[LinestringEdge]:
+        # edges whose bounding box intersects the area
+        potential_edges_in_area = self.index.intersection(area_bounds.bounds, objects='raw')
 
-	def get_edges_in_area(self, area_bounds: Polygon) -> List[LinestringEdge]:
-		# edges whose bounding box intersects the area
-		potential_edges_in_area = self.index.intersection(area_bounds.bounds, objects='raw')
-
-		edges_in_area = []
-		for candidate in potential_edges_in_area:
-			if area_bounds.intersects(candidate.linestring):
-				edges_in_area.append(candidate)
-		return edges_in_area
+        edges_in_area = []
+        for candidate in potential_edges_in_area:
+            if area_bounds.intersects(candidate.linestring):
+                edges_in_area.append(candidate)
+        return edges_in_area
