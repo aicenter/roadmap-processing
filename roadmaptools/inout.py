@@ -16,13 +16,15 @@ import pickle
 import json
 import networkx as nx
 import csv
-import gpxpy
-import gpxpy.gpx
+# import gpxpy
+# import gpxpy.gpx
+import gpx_parser as gpxpy
+from gpx_parser.GPX import GPX
 
 from typing import Iterable, Callable, Dict, Tuple, List, Union
 from tqdm import tqdm
 from logging import info
-from gpxpy.gpx import GPX
+#from gpxpy.gpx import GPX
 from roadmaptools.init import config
 from roadmaptools.printer import print_info
 
