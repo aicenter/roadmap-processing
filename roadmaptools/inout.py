@@ -18,7 +18,7 @@ import networkx as nx
 import csv
 # import gpxpy
 # import gpxpy.gpx
-import gpx_parser as gpxpy
+import gpx_parser
 from gpx_parser.GPX import GPX
 
 from typing import Iterable, Callable, Dict, Tuple, List, Union
@@ -119,7 +119,7 @@ def save_gpx(data: GPX, filepath: str):
 def load_gpx(filepath: str) -> GPX:
 	print_info("Loading GPX file from: {}".format(os.path.realpath(filepath)))
 	gpx_file = open(filepath, 'r')
-	gpx = gpxpy.parse(gpx_file)
+	gpx = gpx_parser.parse(gpx_file)
 	print_info("{} tracks loaded".format(len(gpx.tracks)))
 	return gpx
 

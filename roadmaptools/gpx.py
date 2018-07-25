@@ -1,5 +1,8 @@
 from typing import Callable
-from gpxpy.gpx import GPX, GPXTrackPoint, GPXTrack
+# from gpxpy.gpx import GPX, GPXTrackPoint, GPXTrack
+from gpx_parser.GPX import GPX
+from gpx_parser.GPXTrackPoint import GPXTrackPoint
+from gpx_parser.GPXTrack import GPXTrack
 from tqdm import tqdm
 
 
