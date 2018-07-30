@@ -10,5 +10,5 @@ setup(
    packages=['roadmaptools'],
    url = 'https://github.com/aicenter/roadmap-processing',
    download_url = 'https://github.com/aicenter/roadmap-processing/archive/0.2.5.tar.gz',
-   install_requires=['osmread==0.2','setuptools','networkx==1.11','geojson==1.3.5','pip'],
+   install_requires=['osmread','setuptools','networkx','geojson','pip'],
 )
