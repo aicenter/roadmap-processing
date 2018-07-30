@@ -65,12 +65,12 @@ pd.set_option('display.max_columns', None)
 column_names = ['id_record', 'id_car', 'status', 'lat', 'lon', 'time']
 use_columns = ['id_car', 'status', 'lat', 'lon', 'time']
 # data_types = [str,int,str,float,float,str]
-# arr = np.empty(shape=(len(os.listdir('/home/martin/MOBILITY/data/traces')),),dtype=object)
+arr = np.empty(shape=(len(os.listdir('/home/martin/MOBILITY/data/traces')),),dtype=object)
 for idx, filename in tqdm(enumerate(os.listdir('/home/martin/MOBILITY/data/traces'))):
     abs_filename = os.path.join('/home/martin/MOBILITY/data/traces', filename)
     filename_parts = abs_filename.split(sep='.')
     file_extension = filename_parts[-2]
-    df = pd.read_csv(abs_filename, header=None, names=column_names, usecols=use_columns, converters={'status': f})
+    df = pd.read_csv(abs_filename, header=None, names=column_names, usecols=['id_car', 'status', 'lat', 'lon', 'time'], converters={'status': f})
     df['id_car'] = pd.to_numeric(file_extension + df['id_car'].astype(str))
     # print(df.head())
     # print(df.dtypes)
@@ -80,10 +80,10 @@ for idx, filename in tqdm(enumerate(os.listdir('/home/martin/MOBILITY/data/trace
     filtered.sort_values(by='time', ascending=True, inplace=True)
     filtered.sort_values(by='id_car', kind='mergesort', ascending=True, inplace=True)
     # print(filtered)
-    ls.append(filtered)
-    # arr[idx] = filtered
+    # ls.append(filtered)
+    arr[idx] = filtered
 
-df = pd.concat(ls, ignore_index=True)
+df = pd.concat(arr, ignore_index=True)
 # # exit(0)
 # print(df)
 # df.sort_values(by=['id_car','time'],ascending=True,inplace=True)
