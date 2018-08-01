@@ -1,7 +1,7 @@
 from typing import Callable, Tuple
 # from gpxpy.gpx import GPXTrack, GPXTrackPoint
-from gpx_parser.GPXTrack import GPXTrack
-from gpx_parser.GPXTrackPoint import GPXTrackPoint
+from gpx_lite.gpxtrack import GPXTrack
+from gpx_lite.gpxtrackpoint import GPXTrackPoint
 from shapely.geometry import LineString, Point
 
 

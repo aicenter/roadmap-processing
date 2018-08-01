@@ -18,8 +18,8 @@ import networkx as nx
 import csv
 # import gpxpy
 # import gpxpy.gpx
-import gpx_parser
-from gpx_parser.GPX import GPX
+import gpx_lite
+from gpx_lite.gpx import GPX
 
 from typing import Iterable, Callable, Dict, Tuple, List, Union
 from tqdm import tqdm
