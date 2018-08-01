@@ -88,11 +88,11 @@ def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
 
 
 def simplify_graph(g: nx.MultiDiGraph, check_lanes):
-	for n, _ in list(g.adjacency()):
+	for n, _ in list(g.adjacency_iter()):
 		if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
 			simplify_oneways(n, g, check_lanes)
 
-	for n, _ in list(g.adjacency()):
+	for n, _ in list(g.adjacency_iter()):
 		if g.out_degree(n) == 2 and g.in_degree(n) == 2:  # both directions in highway
 			simplify_twoways(n, g, check_lanes)
 

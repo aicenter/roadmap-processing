@@ -17,12 +17,9 @@ temp_features = list()
 
 def traverse_and_create_graph(g, subgraph):
     temp_g = nx.MultiDiGraph()
-    for n, nbrsdict in list(g.adjacency()):
-        if n in subgraph:
-            for nbr, keydict in nbrsdict.items():
-                if nbr in subgraph:
-                    for key, d in keydict.items():
-                        temp_g.add_edge(n, nbr, id=d['id'], others=d['others'], lanes=d['lanes'])
+    for n, nbr, nbrsdict in g.edges_iter(data=True):
+        if nbrsdict["id"] in subgraph:
+            temp_g.add_edge(n, nbr, id=nbrsdict['id'], others=nbrsdict['others'], lanes=nbrsdict['lanes'])
     return temp_g
 
 
@@ -50,9 +47,9 @@ def get_node(node):
 
 def detect_parallel_edges(g):
     set_of_edges = set()
-    for n, nbrsdict in list(g.adjacency()):
+    for n, nbrsdict in list(g.adjacency_iter()):
         for nbr, keydict in nbrsdict.items():
-            for key, d in keydict.items():
+            for key, d in list(keydict.items()):
                 if key != 0:
                     if (n, nbr) in set_of_edges:
                         temp_edges.append((g[n][nbr][key], get_node_reversed(n), get_node_reversed(nbr), True))
