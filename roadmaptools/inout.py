@@ -119,7 +119,7 @@ def save_gpx(data: GPX, filepath: str):
 def load_gpx(filepath: str) -> GPX:
 	print_info("Loading GPX file from: {}".format(os.path.realpath(filepath)))
 	gpx_file = open(filepath, 'r')
-	gpx = gpx_parser.parse(gpx_file)
+	gpx = gpx_lite.iterparse(gpx_file)
 	print_info("{} tracks loaded".format(len(gpx.tracks)))
 	return gpx
 
