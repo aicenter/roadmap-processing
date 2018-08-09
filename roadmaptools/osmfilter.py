@@ -1,7 +1,6 @@
 import time
 import platform
 import os
-import subprocess
 
 from roadmaptools.printer import print_info, print_err
 from roadmaptools.init import config
@@ -44,10 +43,8 @@ def check_osmfilter():
 
         if not os.path.exists(executable):
             print_info('Downloading and compiling osmfilter... ')
-            download_file('http://m.m.i24.cc/osmfilter.c','osmfilter.c')
+            download_file('http://m.m.i24.cc/osmfilter.c', 'osmfilter.c')
             os.system('cc -x c osmfilter.c -O3 -o osmfilter')
-            # os.system('wget -O - http://m.m.i24.cc/osmfilter.c |cc -x c - -O3 -o osmfilter')
-
         return True
 
     elif my_platform == 'Windows':
@@ -55,21 +52,9 @@ def check_osmfilter():
 
         if not os.path.exists(executable):
             print_info('Downloading and compiling osmfilter... ')
-
-            # try:
-                # subprocess.call(['wget', 'http://m.m.i24.cc/osmfilter.exe'])
-            download_file('http://m.m.i24.cc/osmfilter.exe','osmfilter.exe')
-            # except OSError as e:
-            #     if e.errno == os.errno.ENOENT:
-            #         print_err('wget not found! Please, install it.')  # handle file not found error
-            #     else:
-            #         raise  # something else went wrong while trying to run `wget`
-
-                # return False
+            download_file('http://m.m.i24.cc/osmfilter.exe', 'osmfilter.exe')
         return True
 
     else:
         print_err('OSM filtering not implemented for platform: %s. ' % my_platform)
         return False
-
-check_osmfilter()

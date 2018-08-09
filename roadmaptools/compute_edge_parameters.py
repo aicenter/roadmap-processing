@@ -25,7 +25,7 @@ def compute_edge_parameters(input_filename: str, output_filename: str):
 	roadmaptools.inout.save_geojson(geojson_content, output_filename)
 
 
-def compute_centrality(graph: nx.MultiDiGraph, data: geojson.feature.FeatureCollection, edge_map: Dict):
+def compute_centrality(graph: nx.DiGraph, data: geojson.feature.FeatureCollection, edge_map: Dict):
 	for item in data['features']:
 		edge = edge_map[item['properties']['id']]
 		from_degree = graph.degree(edge[0])
@@ -34,15 +34,15 @@ def compute_centrality(graph: nx.MultiDiGraph, data: geojson.feature.FeatureColl
 		item['properties']["to_degree"] = to_degree
 
 
-def _create_edge_map(graph: nx.MultiDiGraph) -> Dict:
+def _create_edge_map(graph: nx.DiGraph) -> Dict:
 	edge_map = {}
 	for edge in graph.edges():
-		edge_map[graph[edge[0]][edge[1]][0]["id"]] = edge
-
+		# edge_map[graph[edge[0]][edge[1]][0]["id"]] = edge
+		edge_map[graph[edge[0]][edge[1]]["id"]] = edge
 	return edge_map
 
 
-def graph_multi_test(graph: nx.MultiDiGraph):
+def graph_multi_test(graph: nx.DiGraph):
 	for edge in graph.edges():
 		if len(graph[edge[0]][edge[1]]) > 1:
 			a=1

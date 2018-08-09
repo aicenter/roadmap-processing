@@ -30,7 +30,7 @@ def load_geojson(in_stream):
 
 
 def load_graph(json_dict):
-    g = nx.MultiDiGraph()
+    g = nx.DiGraph()
     for item in json_dict['features']:
         coord = item['geometry']['coordinates']
         coord_u = get_node(coord[0])

@@ -1,14 +1,14 @@
 import networkx as nx
 import roadmaptools.inout
 
-from networkx import MultiDiGraph
+from networkx import DiGraph
 from geojson.feature import FeatureCollection
 from tqdm import tqdm
 from roadmaptools.init import config
 from roadmaptools.printer import print_info
 
 
-def get_biggest_component(graph: MultiDiGraph) -> set:
+def get_biggest_component(graph: DiGraph) -> set:
 	biggest_subgraph = graph
 
 	if not nx.is_strongly_connected(graph):

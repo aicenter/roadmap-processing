@@ -15,7 +15,7 @@ class GMapsAPI:  # GET ALL DATA FOR ALL TRAFFIC MODELS
 	traffic_models = ["best_guess", "pessimistic", "optimistic"]
 	temp_dict = dict()
 	json_dict = dict()
-	g = nx.MultiDiGraph()
+	g = nx.DiGraph()
 
 	max_paths_in_request = 10
 

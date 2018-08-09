@@ -16,7 +16,7 @@ temp_features = list()
 
 
 def traverse_and_create_graph(g, subgraph):
-    temp_g = nx.MultiDiGraph()
+    temp_g = nx.DiGraph()
     for n, nbrsdict in list(g.adjacency()):
         if n in subgraph:
             for nbr, keydict in nbrsdict.items():
@@ -113,7 +113,7 @@ def add_new_edges(json_dict, edge, new_id):  # don't delete item it isn't necess
 
 
 def load_graph(json_dict):
-    g = nx.MultiDiGraph()
+    g = nx.DiGraph()
     for item in json_dict['features']:
         coord = item['geometry']['coordinates']
         coord_u = get_node(coord[0])
