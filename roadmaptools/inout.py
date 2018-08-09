@@ -5,7 +5,7 @@ import sys
 # current_dir = sys.path[0]
 # sys.path = sys.path[1:]
 import geojson
-import geojson.feature
+# import geojson.feature
 # sys.path = [current_dir] + sys.path
 
 import urllib.request
