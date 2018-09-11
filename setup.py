@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
    name='roadmaptools',
-   version='0.2.5',
+   version='1.0.0',
    description='OSM and geoJSON tools',
    author='Martin Korytak',
    author_email='cbudrud@gmail.com',
