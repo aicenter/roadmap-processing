@@ -53,7 +53,7 @@ def clean_geojson(input_stream, output_stream):
 
 
 def get_cleaned_geojson(json_dict):
-	print_info("Cleaning", flush=True)
+	print_info("Cleaning geojson")
 	prune_geojson_file(json_dict)
 	print_info("Removing empty features")
 	json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
