@@ -150,13 +150,15 @@ def load_graph_from_geojson(filepath: str) -> nx.DiGraph:
     return load_graph(data)
 
 
-def load_pickle(filename: str):
-    with open(filename, 'rb') as pickled_data:
+def load_pickle(filepath: str):
+    print_info("Loading pickle file from: {}".format(os.path.realpath(filepath)))
+    with open(filepath, 'rb') as pickled_data:
         data = pickle.load(pickled_data)
 
     return data
 
 
-def save_pickle(data, filename):
-    with open(filename, 'wb') as f:
+def save_pickle(data, filepath):
+    print_info("Saving pickle file to: {}".format(os.path.realpath(filepath)))
+    with open(filepath, 'wb') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
