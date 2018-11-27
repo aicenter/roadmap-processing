@@ -129,7 +129,7 @@ def load_graph(json_dict):
 
 def create_DiGraph(g):
     temp_gr = nx.DiGraph()
-    for n, nbrsdict in g.adjacency_iter():
+    for n, nbrsdict in g.adjacency():
         for nbr, keydict in nbrsdict.items():
             for key, d in keydict.items():
                 temp_gr.add_edge(n, nbr, lanes=d['lanes'], id=d['id'], others=d['others'])
@@ -165,24 +165,24 @@ def prepare_graph_to_agentpolisdemo():
 
 
 def get_nodes_and_edges_for_agentpolisdemo(json_dict):
-    graph = load_graph(json_dict)
-    biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
-    new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-
-    detect_parallel_edges(new_graph)
-    id_iter = find_max_id(json_dict) + 1  # new id iterator
-    for edge in temp_edges:
-        add_new_edges(json_dict, edge, id_iter)
-        id_iter += 2
-    json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    prepare_to_saving_optimized(new_graph, json_dict)
-    json_dict['features'].extend(temp_features)
+    # graph = load_graph(json_dict)
+    # biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
+    # new_graph = traverse_and_create_graph(graph, biggest_subgraph)
+    #
+    # detect_parallel_edges(new_graph)
+    # id_iter = find_max_id(json_dict) + 1  # new id iterator
+    # for edge in temp_edges:
+    #     add_new_edges(json_dict, edge, id_iter)
+    #     id_iter += 2
+    # json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+    # prepare_to_saving_optimized(new_graph, json_dict)
+    # json_dict['features'].extend(temp_features)
     get_ids(json_dict)
     nodes = export_points_to_geojson(json_dict)
 
-    gr = load_graph(json_dict) # remove duplicated edges
-    gr = create_DiGraph(gr)
-    prepare_to_saving_optimized(gr, json_dict)
+    # gr = load_graph(json_dict) # remove duplicated edges
+    # gr = create_DiGraph(gr)
+    # prepare_to_saving_optimized(gr, json_dict)
     return [json_dict, nodes]
 
 
