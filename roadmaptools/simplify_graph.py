@@ -14,18 +14,18 @@ from roadmaptools.printer import print_info
 thresholds = [0, 0.01, 0.5, 1, 2]
 
 
-def simplify_geojson():
+def simplify_geojson(input_file = config.sanitized_geojson_file, output_file = config.simplified_file):
     print_info('Simplifying geoJSON')
     start_time = time.time()
 
     # l_check set True whether you don't want to simplify edges with different number of lanes
     # c_check set True whether you don't want to simplify edges with different curvature
-    geojson_file = roadmaptools.inout.load_geojson(config.sanitized_geojson_file)
+    geojson_file = roadmaptools.inout.load_geojson(input_file)
 
     print_info("Simplification process started")
     geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)
 
-    roadmaptools.inout.save_geojson(geojson_out, config.simplified_file)
+    roadmaptools.inout.save_geojson(geojson_out, output_file)
 
     print_info('Simplification completed. (%.2f secs)' % (time.time() - start_time))
 
@@ -69,7 +69,7 @@ def create_digraph(graph: nx.MultiDiGraph) -> nx.DiGraph:
     new_graph = nx.DiGraph()
     for n, nbrdict in graph.adjacency():
         for nbr, attributes in nbrdict.items():
-            if len(attributes) > 1:
+            if not type(attributes) is dict:
                 id_counter = 0
                 for i in range(len(attributes)):
                     if attributes[i]['others'] == [[]]:
@@ -86,7 +86,7 @@ def create_digraph(graph: nx.MultiDiGraph) -> nx.DiGraph:
                         id_counter += 1
 
             else:
-                new_graph.add_edge(n, nbr, id=attributes[0]['id'], lanes=attributes[0]['lanes'], others=attributes[0][
+                new_graph.add_edge(n, nbr, id=attributes['id'], lanes=attributes['lanes'], others=attributes[
                     'others'])
     return new_graph
 
@@ -125,7 +125,7 @@ def try_find(id, temp_dict):
 
 
 def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
-    g = nx.MultiDiGraph()
+    g = nx.DiGraph()
     for item in json_dict['features']:
         coord = item['geometry']['coordinates']
         coord_u = get_node(coord[0])

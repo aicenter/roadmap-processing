@@ -19,9 +19,7 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 							 'lanes:backward': int, 'junction': str}
 
 
-def clean_geojson_files():
-	input_file = config.geojson_file
-	output_file = config.cleaned_geojson_file
+def clean_geojson_files(input_file = config.geojson_file, output_file = config.cleaned_geojson_file):
 	print_info('Cleaning geoJSON - input file: {}, cleaned file: {}'.format(input_file, output_file))
 	start_time = time.time()
 
