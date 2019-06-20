@@ -20,8 +20,8 @@ def get_node_id(lat: T, lon: T) -> int:
 			lat = float(lat)
 			lon = float(lon)
 	if isinstance(lat, float):
-		lat = int(lat * 10 ** 6)
-		lon = int(lon * 10 ** 6)
+		lat = int(lat * 10 ** 7)
+		lon = int(lon * 10 ** 7)
 
 	# compute prefix marking a sign
 	if lon < 0 and lat < 0:
@@ -33,7 +33,7 @@ def get_node_id(lat: T, lon: T) -> int:
 	else:
 		prefix = 3
 
-	string_id = "{}{:09}{:09}".format(prefix, abs(lat), abs(lon))
+	string_id = "{}{:010}{:010}".format(prefix, abs(lat), abs(lon))
 
 	return int(string_id)
 
