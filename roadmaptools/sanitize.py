@@ -41,6 +41,10 @@ def filter_geojson_features_by_graph(geojson_data: FeatureCollection, edge_ids: 
 
 
 def sanitize():
+	"""
+	return only the biggest component from map
+	:return:
+	"""
 	geojson_data = roadmaptools.inout.load_geojson(config.cleaned_geojson_file)
 
 	graph = roadmaptools.inout.load_graph(geojson_data)

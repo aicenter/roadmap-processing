@@ -4,13 +4,19 @@ import copy
 import argparse
 import sys
 import time
+import pandas as pd
+import roadmaptools.inout
+import roadmaptools.road_structures
 
+from typing import Dict, Set, List
 from tqdm import tqdm, trange
+from geojson import FeatureCollection, Feature
+from pandas import DataFrame
 from roadmaptools.printer import print_info
 from roadmaptools.init import config
 
 # properties that will not be deleted
-set_of_useful_properties = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel',
+SET_OF_USEFUL_PROPERTIES = {'highway', 'id', 'lanes', 'maxspeed', 'oneway', 'bridge', 'width', 'tunnel',
 							'traffic_calming', 'lanes:forward', 'lanes:backward', 'junction'}
 
 # for correct type conversion
@@ -18,28 +24,28 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 							 'width': float, 'tunnel': str, 'traffic_calming': str, 'lanes:forward': int,
 							 'lanes:backward': int, 'junction': str}
 
+nonempty_columns = set()
 
-def clean_geojson_files(input_file = config.geojson_file, output_file = config.cleaned_geojson_file):
-	print_info('Cleaning geoJSON - input file: {}, cleaned file: {}'.format(input_file, output_file))
+
+def clean_geojson_files(input_file_path: str = config.geojson_file, output_file_path: str = config.cleaned_geojson_file,
+						keep_attributes: Set[str] = SET_OF_USEFUL_PROPERTIES, remove_attributes: Set[str] = None):
+	print_info('Cleaning geoJSON - input file: {}, cleaned file: {}'.format(input_file_path, output_file_path))
 	start_time = time.time()
 
-	input_stream = codecs.open(input_file, encoding='utf8')
-	output_stream = open(output_file, 'w')
+	feature_collection = roadmaptools.inout.load_geojson(input_file_path)
 
-	print_info("Loading geojson file from: {}".format(input_file))
-	geojson_file = _load_geojson(input_stream)
-	print_info("Loading finished")
+	edges = [item for item in feature_collection['features'] if item['geometry']['type'] == 'LineString']
 
-	geojson_out = get_cleaned_geojson(geojson_file)
+	# global nonempty_columns
+	# nonempty_columns = get_non_empty_columns(edges)
 
-	print_info("Saving file to: {}".format(output_file))
-	save_geojson(geojson_out, output_stream)
-	print_info("Cleaned geojson saved successfully")
-
-	input_stream.close()
-	output_stream.close()
+	prune_geojson_file(feature_collection, edges, keep_attributes, remove_attributes)
+	# print_info("Removing empty features")
+	# json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
 
 	print_info('Cleaning complete. (%.2f secs)' % (time.time() - start_time))
+
+	roadmaptools.inout.save_geojson(feature_collection, output_file_path)
 
 
 def clean_geojson(input_stream, output_stream):
@@ -50,19 +56,24 @@ def clean_geojson(input_stream, output_stream):
 	save_geojson(json_dict, output_stream)
 
 
-def get_cleaned_geojson(json_dict):
-	print_info("Cleaning geojson")
-	prune_geojson_file(json_dict)
-	print_info("Removing empty features")
-	json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-	return json_dict
+# def get_cleaned_geojson(json_dict):
+# 	print_info("Cleaning geojson")
+# 	prune_geojson_file(json_dict)
+# 	print_info("Removing empty features")
+# 	json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+# 	return json_dict
 
 
-def remove_properties(item):
-	temp_dict_with_props = copy.deepcopy(item['properties'])
-	for prop in temp_dict_with_props:
-		if prop not in set_of_useful_properties:
-			del item['properties'][prop]
+def remove_properties(item, keep_attributes: Set[str], remove_attributes: Set[str]) -> Feature:
+	# temp_dict_with_props = copy.deepcopy(item['properties'])
+	# for prop in temp_dict_with_props:
+	# 	if prop not in set_of_useful_properties:
+	# 		del item['properties'][prop]
+
+	if remove_attributes:
+		item['properties'] = {k: v for k, v in item['properties'].items() if k not in remove_attributes}
+	else:
+		item['properties'] = {k: v for k, v in item['properties'].items() if k in keep_attributes}
 	return item
 
 
@@ -86,30 +97,37 @@ def get_geojson_with_deleted_features(json_dict):
 	return json_deleted
 
 
-def get_single_pair_of_coords(coord_u, coord_v, new_item, id, is_forward):
-	new_item['properties']['id'] = id
-	del new_item['geometry']['coordinates']
-	new_item['geometry']['coordinates'] = [coord_u, coord_v]
-	if ('oneway' in new_item['properties'] and new_item['properties']['oneway'] != 'yes') or ('oneway' not in new_item['properties']):
-		if 'lanes:forward' in new_item['properties'] and is_forward:
-			new_item['properties']['lanes'] = int(new_item['properties']['lanes:forward'])
-		elif 'lanes:backward' in new_item['properties'] and not is_forward:
-			new_item['properties']['lanes'] = int(new_item['properties']['lanes:backward'])
-		elif is_forward and 'lanes' in new_item['properties']:
-			new_item['properties']['lanes'] = int(new_item['properties']['lanes']) - 1
-		elif not is_forward and 'lanes' in new_item['properties']:
-			new_item['properties']['lanes'] = 1
+def create_desimplified_edge(coord_u, coord_v, item: Feature, is_forward: bool):
+	item['properties']['id'] = str(roadmaptools.road_structures.get_edge_id_from_coords(coord_u, coord_v))
+	del item['geometry']['coordinates']
+	item['geometry']['coordinates'] = [coord_u, coord_v]
 
-	if 'lanes' not in new_item['properties'] or int(new_item['properties']['lanes']) < 1:
-		new_item['properties']['lanes'] = 1
+	# lane config for two way roads
+	if 'oneway' not in item['properties'] or item['properties']['oneway'] != 'yes':
+		if 'lanes:forward' in item['properties'] and is_forward:
+			item['properties']['lanes'] = int(item['properties']['lanes:forward'])
+		elif 'lanes:backward' in item['properties'] and not is_forward:
+			item['properties']['lanes'] = int(item['properties']['lanes:backward'])
+		# elif is_forward and 'lanes' in item['properties']:
+		# 	item['properties']['lanes'] = int(item['properties']['lanes']) - 1
+		# elif not is_forward and 'lanes' in item['properties']:
+		# 	item['properties']['lanes'] = 1
+		elif 'lanes' in item['properties'] and int(item['properties']['lanes']) >= 2:
+			item['properties']['lanes'] = int(item['properties']['lanes']) / 2
+		else:
+			item['properties']['lanes'] = 1
+	# lane config for one way roads
 	else:
-		new_item['properties']['lanes'] = int(new_item['properties']['lanes'])
+		if 'lanes' not in item['properties'] or int(item['properties']['lanes']) < 1:
+			item['properties']['lanes'] = 1
+		else:
+			item['properties']['lanes'] = int(item['properties']['lanes'])
 
-	new_item['properties']['oneway'] = 'yes'
-	return new_item
+	# item['properties']['oneway'] = 'yes'
+	return item
 
 
-def check_types(item):
+def check_types(item: Feature):
 	for prop in dict_of_useful_properties:
 		if prop in item['properties'] and not isinstance(item['properties'][prop], dict_of_useful_properties[prop]):
 			if dict_of_useful_properties[prop] == int:
@@ -151,40 +169,35 @@ def check_types(item):
 					del item['properties'][prop]
 
 
-def prune_geojson_file(json_dict):
-	id_iterator = 0
-	length = len(json_dict['features'])
+def prune_geojson_file(json_dict: FeatureCollection, edges: List[Feature], keep_attributes: Set[str],
+					   remove_attributes: Set[str],
+					   desimplify=True):
+	"""
+	Transforms the geojson file from OSM into the version to be used with roadmaptools.
+	Output file contains only edges. Each edge receives an id, starting from 0 to edge count.
+	Feature collection is changed inplace. If desimplify=True, than the edges are split on coordinates.
+	:param json_dict: Input data
+	:return:
+	"""
 
-	for i in tqdm(range(0, length), desc="Pruning geojson", unit_scale=1):
-		item = json_dict['features'][i]
-		if item['geometry']['type'] == 'LineString':
-			item = remove_properties(item)
-			check_types(item)
+	json_dict['features'] = []
+
+	for item in tqdm(edges, desc="Pruning geojson"):
+		remove_properties(item, keep_attributes, remove_attributes)
+		# check_types(item)
+		if desimplify:
 			for j in range(0, len(item['geometry']['coordinates']) - 1):
-				temp = copy.deepcopy(item)
+				new_edge = copy.deepcopy(item)
 				u = item['geometry']['coordinates'][j]
 				v = item['geometry']['coordinates'][j + 1]
-				new_item = get_single_pair_of_coords(u, v, temp, id_iterator, True)
+				new_item = create_desimplified_edge(u, v, new_edge, True)
 				json_dict['features'].append(new_item)
-				if 'oneway' in item['properties']:
-					if item['properties']['oneway'] != 'yes':
-						id_iterator += 1
-						temp = copy.deepcopy(item)
-						new_item = get_single_pair_of_coords(v, u, temp, id_iterator, False)
-						json_dict['features'].append(new_item)
-				else:
-					if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link' or item['properties']['highway'] == 'trunk_link' \
-							or item['properties']['highway'] == 'primary_link' or ('junction' in item['properties'] and item['properties']['junction'] == 'roundabout'):
-						id_iterator += 1
-						continue
-					id_iterator += 1
-					temp = copy.deepcopy(item)
-					new_item = get_single_pair_of_coords(v, u, temp, id_iterator, False)
+
+				# create the opposite direction edge if it is not oneway
+				if 'oneway' not in item['properties'] or item['properties']['oneway'] != 'yes':
+					new_edge = copy.deepcopy(item)
+					new_item = create_desimplified_edge(v, u, new_edge, False)
 					json_dict['features'].append(new_item)
-
-				id_iterator += 1
-
-		item.clear()
 
 
 def save_geojson(json_dict, out_stream):
@@ -198,6 +211,33 @@ def get_args():
 	parser.add_argument('-o', dest="output", type=str, action='store', help='output file')
 	return parser.parse_args()
 
+
+def get_non_empty_columns(edges: List[Feature], empty_ratio: float = 0) -> Set[str]:
+
+	# dataframe init
+	rows = []
+	for item in tqdm(edges, desc="Counting non-empty properties"):
+		row = item['properties']
+		rows.append(row)
+	table = DataFrame.from_records(rows)
+
+	nonempty_columns = set()
+	columns = set()
+
+	for column in table.columns:
+		non_empty_count = count_nonempty_in_column(table, column)
+		ratio = non_empty_count / len(table)
+		if ratio > empty_ratio:
+			nonempty_columns.add(column)
+		columns.add(column)
+
+	print("removed {} empty columns".format(len(columns) - len(nonempty_columns)))
+
+	return nonempty_columns
+
+
+def count_nonempty_in_column(dataframe: DataFrame, column: str) -> int:
+	return (dataframe[column].values != '').sum()
 
 # EXAMPLE OF USAGE
 if __name__ == '__main__':

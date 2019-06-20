@@ -8,6 +8,9 @@ import time
 from roadmaptools.printer import print_info
 from roadmaptools.init import config
 
+SPEED_CODE_DICT = {'CZ:urban': 50}
+
+
 # length is computed here too!!!
 def estimate_posted_speed(input_filename: str, output_filename: str):
     print_info('Estimating travel speed')
@@ -57,7 +60,11 @@ def get_speeds(json_dict):
             else:
                 item['properties']['maxspeed'] = 50
         else:
-            item['properties']['maxspeed'] = int(item['properties']['maxspeed'])
+            try:
+                item['properties']['maxspeed'] = int(item['properties']['maxspeed'])
+            except:
+                item['properties']['maxspeed'] = SPEED_CODE_DICT[item['properties']['maxspeed']]
+
         item['properties']['length'] = get_length(item['geometry']['coordinates'])
 
 

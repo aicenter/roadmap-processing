@@ -1,7 +1,7 @@
 import sys
 # print(sys.path)
 
-# this fixes the geojson name clash, because python does not provide a realy working absolute imports
+# this fixes the geojson name clash, because python does not provide a really working absolute imports
 # current_dir = sys.path[0]
 # sys.path = sys.path[1:]
 import geojson
@@ -102,8 +102,9 @@ def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
     return csv.reader(f, delimiter=delimiter)
 
 
-def save_csv(data: List[List[str]], filepath: str):
-    with open(filepath, 'w', newline='') as csvfile:
+def save_csv(data: List[List[str]], filepath: str, append: bool = False):
+    mode = 'a' if append else 'w'
+    with open(filepath, mode, newline='') as csvfile:
         writer = csv.writer(csvfile)
         for row in data:
             writer.writerow(row)
