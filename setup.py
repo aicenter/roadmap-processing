@@ -11,7 +11,7 @@ setup(
     url = 'https://github.com/aicenter/roadmap-processing',
     download_url = 'https://github.com/aicenter/roadmap-processing/archive/0.2.5.tar.gz',
     install_requires=['osmread','setuptools','networkx>=2.0','geojson', 'gpx_lite', 'rtree', 'tqdm',
-        'typing', 'numpy', 'fconfig', 'googlemaps', 'overpass', 'pandas', 'scipy', 'shapely'],
+        'typing', 'numpy', 'fconfig', 'googlemaps', 'overpass', 'pandas', 'scipy', 'shapely', 'vincenty'],
     python_requires='>=3',
     package_data={'roadmaptools.resources': ['*.cfg']}
 )
