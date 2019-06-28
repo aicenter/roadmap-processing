@@ -1,4 +1,5 @@
 from __future__ import division
+from vincenty import vincenty
 import math
 import geojson
 import codecs
@@ -66,6 +67,48 @@ def get_distance_between_coords(point1, point2):  # return in meters
 #     /    \
 #   A ----- B
 #       b
+
+def vincent_get_distance(point1, point2):
+    return vincenty(point1, point2)*1000
+
+def test_vincent_distance_between_coords():
+    #distances are from https://www.cqsrg.org/tools/GCDistance/
+    delta = 0.01 #1 centimeter
+    mes = "in function " + vincent_get_distance.__str__() + " value deviates by more than " + str(delta) + " meters"
+    d1 = [50.0882367,14.3448108]
+    d2 = [50.0762436,14.4189147]
+    distance = 5469.054 #approximate maximum of route length
+    assert distance - delta <= vincent_get_distance(d1, d2) <= distance + delta, mes
+
+    d1 = [50.080128,14.395388]
+    d2 = [50.079301,14.373770]
+    distance = 1550.086
+    assert distance - delta <= vincent_get_distance(d1, d2) <= distance + delta, mes
+
+    d1 = [50.075911,14.419055]
+    d2 = [50.075821,14.413369]
+    distance = 407.143
+    assert distance - delta <= vincent_get_distance(d1, d2) <= distance + delta, mes
+
+def test_greatCircle_distance_between_coords():
+    # distances are from https://www.cqsrg.org/tools/GCDistance/
+    delta = 0.005 # 0.5 percent
+    mes = "in function "+ get_distance_between_coords.__str__() + " value deviates by more than " + str(delta*100) +\
+          " % of correct length"
+    d1 = [50.0882367, 14.3448108]
+    d2 = [50.0762436, 14.4189147]
+    distance = 5469.054  # approximate maximum of route length
+    assert distance * (1-delta) <= get_distance_between_coords(d1, d2) <= distance * (1+delta), mes
+
+    d1 = [50.080128, 14.395388]
+    d2 = [50.079301, 14.373770]
+    distance = 1550.086
+    assert distance * (1-delta) <= get_distance_between_coords(d1, d2) <= distance * (1+delta), mes
+
+    d1 = [50.075911, 14.419055]
+    d2 = [50.075821, 14.413369]
+    distance = 407.143
+    assert distance * (1-delta) <= get_distance_between_coords(d1, d2) <= distance * (1+delta), mes
 def calculate_angle_in_degree(a, b, c):
     if a + c > b:  # check if it is a triangle
         angle = math.acos((a ** 2 + c ** 2 - b ** 2) / (2 * a * c))  # in radians
