@@ -19,6 +19,7 @@ def print_table(table: Union[DataFrame, list]):
     if isinstance(table, DataFrame):
         col_widths = _get_dataframe_col_widths(table)
         col_widths = [width + 2 for width in col_widths]
+        _print_row(list(table.columns), col_widths=col_widths)
         for _, row in table.iterrows():
             _print_row(row, col_widths=col_widths)
     else:
@@ -38,7 +39,7 @@ def _print_row(row: Iterable, col_width: int = 0, col_widths: List[int] = None):
 def _get_dataframe_col_widths(table: DataFrame) -> List[int]:
     widths = []
     for column in table.columns:
-        width = table[column].map(lambda x: len(str(x))).max()
+        width = max(table[column].map(lambda x: len(str(x))).max(), len(str(column)))
         widths.append(width)
 
     return widths
