@@ -1,12 +1,13 @@
 from roadmaptools.init import config
 
-from geojson import LineString, Feature
+from typing import Dict, List
+from geojson import LineString, Feature, FeatureCollection
 import networkx as nx
 import codecs
 import roadmaptools.inout
 from roadmaptools.simplify_graph import prepare_to_saving_optimized
 import copy
-from roadmaptools.export_nodes_and_id_maker import export_points_to_geojson, get_ids
+from roadmaptools.export_nodes_and_id_maker import get_node_collection, get_ids
 import sys
 import argparse
 import roadmaptools.sanitize
@@ -151,7 +152,7 @@ def prepare_graph_to_agentpolisdemo():
     prepare_to_saving_optimized(graph, json_dict)
     json_dict['features'].extend(temp_features)
     get_ids(json_dict)
-    nodes = export_points_to_geojson(json_dict)
+    nodes = get_node_collection(json_dict)
     # print len(json_dict['features'])
     # output_stream = open("/home/martin/MOBILITY/GITHUB/smaz/agentpolis-demo/python_scripts/data/nodes.geojson",'w')
     roadmaptools.inout.save_geojson(nodes, config.ap_nodes_file)
@@ -164,7 +165,13 @@ def prepare_graph_to_agentpolisdemo():
     # output_stream.close()
 
 
-def get_nodes_and_edges_for_agentpolisdemo(json_dict):
+def get_nodes_and_edges_for_agentpolisdemo(json_dict) -> List[FeatureCollection]:
+    """
+
+    :param json_dict:
+    :return: [edges,nodes] list
+    """
+
     # graph = load_graph(json_dict)
     # biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
     # new_graph = traverse_and_create_graph(graph, biggest_subgraph)
@@ -178,7 +185,7 @@ def get_nodes_and_edges_for_agentpolisdemo(json_dict):
     # prepare_to_saving_optimized(new_graph, json_dict)
     # json_dict['features'].extend(temp_features)
     get_ids(json_dict)
-    nodes = export_points_to_geojson(json_dict)
+    nodes = get_node_collection(json_dict)
 
     # gr = load_graph(json_dict) # remove duplicated edges
     # gr = create_DiGraph(gr)
