@@ -2,19 +2,21 @@ import geojson
 import networkx as nx
 import codecs
 from roadmaptools.calculate_curvature import get_curvature
-from geojson import LineString, Feature
+from geojson import LineString, Feature, FeatureCollection
 import argparse
 import sys
 import time
 import roadmaptools.inout
+import roadmaptools.road_structures
 
+from tqdm import tqdm
 from roadmaptools.init import config
 from roadmaptools.printer import print_info
 
 thresholds = [0, 0.01, 0.5, 1, 2]
 
 
-def simplify_geojson(input_file = config.sanitized_geojson_file, output_file = config.simplified_file):
+def simplify_geojson(input_file=config.sanitized_geojson_file, output_file=config.simplified_file):
     print_info('Simplifying geoJSON')
     start_time = time.time()
 
@@ -25,9 +27,9 @@ def simplify_geojson(input_file = config.sanitized_geojson_file, output_file = c
     print_info("Simplification process started")
     geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)
 
-    roadmaptools.inout.save_geojson(geojson_out, output_file)
-
     print_info('Simplification completed. (%.2f secs)' % (time.time() - start_time))
+
+    roadmaptools.inout.save_geojson(geojson_out, output_file)
 
 
 def simplify(input_filepath, output_filepath, l_check, c_check):
@@ -35,8 +37,8 @@ def simplify(input_filepath, output_filepath, l_check, c_check):
     check_curvatures = c_check
     json_dict = roadmaptools.inout.load_geojson(input_filepath)
     graph = _load_graph(json_dict)
-    simplify_graph(graph, check_lanes)
-    prepare_to_saving_optimized(graph, json_dict)
+    _simplify_graph(graph, check_lanes)
+    _prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
         _simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
@@ -91,13 +93,13 @@ def create_digraph(graph: nx.MultiDiGraph) -> nx.DiGraph:
     return new_graph
 
 
-def get_simplified_geojson(json_dict, l_check=False, c_check=False):
+def get_simplified_geojson(json_dict: FeatureCollection, l_check=False, c_check=False):
     check_lanes = not l_check  # true means don't simplify edges with different num of lanes
     check_curvatures = c_check
     graph = _load_graph(json_dict)
-    simplify_graph(graph, check_lanes)
+    _simplify_graph(graph, check_lanes)
     graph = create_digraph(graph)
-    prepare_to_saving_optimized(graph, json_dict)
+    _prepare_to_saving_optimized(graph, json_dict)
     if check_curvatures:
         _simplify_curvature(json_dict)
         json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
@@ -126,7 +128,7 @@ def try_find(id, temp_dict):
 
 def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
     g = nx.DiGraph()
-    for item in json_dict['features']:
+    for item in tqdm(json_dict['features'], desc="creating road graph"):
         coord = item['geometry']['coordinates']
         coord_u = get_node(coord[0])
         coord_v = get_node(coord[-1])
@@ -136,12 +138,12 @@ def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
     return g
 
 
-def simplify_graph(g: nx.MultiDiGraph, check_lanes):
-    for n, _ in list(g.adjacency()):
+def _simplify_graph(g: nx.MultiDiGraph, check_lanes):
+    for n, _ in tqdm(list(g.adjacency()), desc="simplifying oneways"):
         if g.out_degree(n) == 1 and g.in_degree(n) == 1:  # oneways
             simplify_oneways(n, g, check_lanes)
 
-    for n, _ in list(g.adjacency()):
+    for n, _ in tqdm(list(g.adjacency()), desc="simplifying bidirectional"):
         if g.out_degree(n) == 2 and g.in_degree(n) == 2:  # both directions in highway
             simplify_twoways(n, g, check_lanes)
 
@@ -230,7 +232,7 @@ def hash_list_of_lists_and_compare(list1, list2):
     return set(temp_hash1) != set(temp_hash2)
 
 
-def simplify_twoways(n, g, check_lanes):
+def simplify_twoways(n, g: nx.MultiDiGraph, check_lanes: bool):
     edge_u1 = list(g.out_edges(n, data=True))[0][:2]
     edge_u2 = list(g.out_edges(n, data=True))[1][:2]
     temp1 = reversed(edge_u1)
@@ -267,14 +269,14 @@ def simplify_twoways(n, g, check_lanes):
             g.remove_edge(edge_u2[0], edge_u2[1])
             g.add_edge(edge_v2[0], edge_v1[0], id=new_id_out, others=coords_out, lanes=lanes_u1)
             is_deleted[0] = True
-        if lanes_u2 == lanes_v1 or lanes_u2 == None or lanes_v1 == None or check_lanes:  # merge only edges with same number of lanes
+        if lanes_u2 == lanes_v1 or lanes_u2 is None or lanes_v1 is None or check_lanes:  # merge only edges with same number of lanes
             if edge_u1[1] != edge_u1[0] or edge_u2[0] != edge_u2[1]:  # check  loops
                 g.remove_edge(edge_u1[0], edge_u1[1])
                 g.remove_edge(edge_u2[1], edge_u2[0])
                 g.add_edge(edge_v1[0], edge_v2[0], id=new_id_in, others=coords_in, lanes=lanes_v1)
                 is_deleted[1] = True
 
-        if is_deleted[0] == True and is_deleted[1] == True or check_lanes:
+        if is_deleted[0] and is_deleted[1] or check_lanes:
             g.remove_node(n)
 
 
@@ -282,7 +284,7 @@ def check_oneway_loop(edge):
     return edge[0] == edge[1]
 
 
-def prepare_to_saving_optimized(g, json_dict):
+def _prepare_to_saving_optimized(g, json_dict):
     list_of_edges = list(g.edges(data=True))
     temp_dict = dict()
 
@@ -298,11 +300,9 @@ def prepare_to_saving_optimized(g, json_dict):
         if item['properties']['id'] not in json_ids:
             json_ids[item['properties']['id']] = [item]
 
-    counter = 0
     for item in json_dict['features']:
         data = try_find(item['properties']['id'], temp_dict)
         if data[0]:
-            counter += 1
             # item.clear()
             json_ids[item['properties']['id']].append(True)
         else:
@@ -310,7 +310,7 @@ def prepare_to_saving_optimized(g, json_dict):
             item['geometry']['coordinates'] = data[1:]
 
     features = []
-    counter = max(k for k, v in json_ids.items()) + 1
+
     for key, value in temp_dict.items():
         if isinstance(key,str) and "_" in key:
             data = try_find(key, temp_dict)
@@ -318,10 +318,10 @@ def prepare_to_saving_optimized(g, json_dict):
             linestring = LineString(coordinates=data[1:])
             # del item['geometry']['coordinates']
             # item['geometry']['coordinates'] = data[1:]
-            item['properties']['id'] = counter
-            feature = Feature(geometry=linestring,id=item['id'],properties=item['properties'])
+            # from_coords =
+            # item['properties']['id'] = counter
+            feature = Feature(geometry=linestring, id=item['id'], properties=item['properties'])
             features.append(feature)
-            counter += 1
 
     for key, linestring in json_ids.items():
         if len(linestring)>1:

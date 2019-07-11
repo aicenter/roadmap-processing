@@ -42,7 +42,7 @@ def get_edge_id(id_from: int, id_to: int) -> int:
 	return int("{}{}".format(id_from, id_to))
 
 
-def get_edge_id_from_coords(from_coord: Tuple[T,T], to_coord: Tuple[T,T]) -> int:
+def get_edge_id_from_coords(from_coord: Tuple[T, T], to_coord: Tuple[T, T]) -> int:
 	from_id = get_node_id(*from_coord)
 	to_id = get_node_id(*to_coord)
 	return get_edge_id(from_id, to_id)

@@ -5,7 +5,7 @@ from geojson import LineString, Feature, FeatureCollection
 import networkx as nx
 import codecs
 import roadmaptools.inout
-from roadmaptools.simplify_graph import prepare_to_saving_optimized
+from roadmaptools.simplify_graph import _prepare_to_saving_optimized
 import copy
 from roadmaptools.export_nodes_and_id_maker import get_node_collection, get_ids
 import sys
@@ -149,7 +149,7 @@ def prepare_graph_to_agentpolisdemo():
         add_new_edges(json_dict, edge, id_iter)
         id_iter += 2
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    prepare_to_saving_optimized(graph, json_dict)
+    _prepare_to_saving_optimized(graph, json_dict)
     json_dict['features'].extend(temp_features)
     get_ids(json_dict)
     nodes = get_node_collection(json_dict)
