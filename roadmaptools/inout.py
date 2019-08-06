@@ -102,7 +102,7 @@ def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
     return csv.reader(f, delimiter=delimiter)
 
 
-def save_csv(data: List[List[str]], filepath: str, append: bool = False):
+def save_csv(data: Iterable[Iterable[str]], filepath: str, append: bool = False):
     mode = 'a' if append else 'w'
     print_info("Saving csv file to: {}".format(os.path.realpath(filepath)))
     with open(filepath, mode, newline='') as csvfile:
