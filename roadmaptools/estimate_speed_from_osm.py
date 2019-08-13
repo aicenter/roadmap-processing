@@ -65,7 +65,7 @@ def get_speeds(json_dict):
             except:
                 item['properties']['maxspeed'] = SPEED_CODE_DICT[item['properties']['maxspeed']]
 
-        item['properties']['length'] = get_length(item['geometry']['coordinates'])
+        item['properties']['length_gps'] = get_length(item['geometry']['coordinates'])
 
 
 def save_geojson(json_dict, out_stream):
