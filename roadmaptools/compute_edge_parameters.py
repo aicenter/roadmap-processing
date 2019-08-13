@@ -11,16 +11,19 @@ _computations = []
 def compute_edge_parameters(input_filename: str, output_filename: str):
 	geojson_content = roadmaptools.inout.load_geojson(input_filename)
 
-	graph = roadmaptools.inout.load_graph(geojson_content)
+	for item in geojson_content['features']:
 
-	edge_map = _create_edge_map(graph)
 
-	graph_multi_test(graph)
+	# graph = roadmaptools.inout.load_graph(geojson_content)
 
-	_computations.append(compute_centrality)
+	# edge_map = _create_edge_map(graph)
 
-	for computation in _computations:
-		computation(graph, geojson_content, edge_map)
+	# graph_multi_test(graph)
+
+	# _computations.append(compute_centrality)
+
+	# for computation in _computations:
+	# 	computation(graph, geojson_content, edge_map)
 
 	roadmaptools.inout.save_geojson(geojson_content, output_filename)
 
