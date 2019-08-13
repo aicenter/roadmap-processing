@@ -30,18 +30,10 @@ nonempty_columns = set()
 def clean_geojson_files(input_file_path: str = config.geojson_file, output_file_path: str = config.cleaned_geojson_file,
 						keep_attributes: Set[str] = SET_OF_USEFUL_PROPERTIES, remove_attributes: Set[str] = None):
 	print_info('Cleaning geoJSON - input file: {}, cleaned file: {}'.format(input_file_path, output_file_path))
+
 	start_time = time.time()
-
 	feature_collection = roadmaptools.inout.load_geojson(input_file_path)
-
-	edges = [item for item in feature_collection['features'] if item['geometry']['type'] == 'LineString']
-
-	# global nonempty_columns
-	# nonempty_columns = get_non_empty_columns(edges)
-
-	prune_geojson_file(feature_collection, edges, keep_attributes, remove_attributes)
-	# print_info("Removing empty features")
-	# json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+	prune_geojson_file(feature_collection, keep_attributes, remove_attributes)
 
 	print_info('Cleaning complete. (%.2f secs)' % (time.time() - start_time))
 
@@ -169,16 +161,24 @@ def check_types(item: Feature):
 					del item['properties'][prop]
 
 
-def prune_geojson_file(json_dict: FeatureCollection, edges: List[Feature], keep_attributes: Set[str],
-					   remove_attributes: Set[str],
+def prune_geojson_file(json_dict: FeatureCollection, keep_attributes: Set[str], remove_attributes: Set[str],
 					   desimplify=True):
 	"""
-	Transforms the geojson file from OSM into the version to be used with roadmaptools.
+	Transforms the geojson file into the version to be used with roadmaptools.
 	Output file contains only edges. Each edge receives an id, starting from 0 to edge count.
-	Feature collection is changed inplace. If desimplify=True, than the edges are split on coordinates.
+	Feature collection is changed inplace.
+
+	If desimplify=True, than the edges are split on coordinates. Note that this is usually needed even when we
+	want the graph to be simplified, because in raw data from openstreetmap, the roads are not split on crossroads.
+
 	:param json_dict: Input data
-	:return:
+	:param keep_attributes: edge attributes to keep
+	:param remove_attributes: edge attributes to remove
+	:param desimplify: True, means than the edges are split on coordinates.
+	:return: None, the feature collection is changed in place
 	"""
+
+	edges = [item for item in json_dict['features'] if item['geometry']['type'] == 'LineString']
 
 	json_dict['features'] = []
 

@@ -40,16 +40,31 @@ def filter_geojson_features_by_graph(geojson_data: FeatureCollection, edge_ids: 
 	geojson_data["features"] = new_features
 
 
-def sanitize():
+# def _detect_parallel_edges(graph):
+# 	set_of_edges = set()
+# 	for n, nbrsdict in list(graph.adjacency()):
+# 		for nbr, keydict in nbrsdict.items():
+# 			for key, d in keydict.items():
+# 				if key != 0:
+# 					if (n, nbr) in set_of_edges:
+# 						temp_edges.append((graph[n][nbr][key], get_node_reversed(n), get_node_reversed(nbr), True))
+# 					else:
+# 						set_of_edges.add((nbr, n))  # add the second direction to set!!
+# 						temp_edges.append((graph[n][nbr][key], get_node_reversed(n), get_node_reversed(nbr), False))
+# 					graph.remove_edge(n, nbr, key)
+
+
+def sanitize(input_filepath: str=config.cleaned_geojson_file, output_filepath: str=config.sanitized_geojson_file):
 	"""
 	return only the biggest component from map
 	:return:
 	"""
-	geojson_data = roadmaptools.inout.load_geojson(config.cleaned_geojson_file)
+	geojson_data = roadmaptools.inout.load_geojson(input_filepath)
 
 	graph = roadmaptools.inout.load_graph(geojson_data)
-	graph = get_biggest_component(graph)
+	biggest_component_set = get_biggest_component(graph)
+	# _detect_parallel_edges(biggest_component_set)
 
-	filter_geojson_features_by_graph(geojson_data, graph)
+	filter_geojson_features_by_graph(geojson_data, biggest_component_set)
 
-	roadmaptools.inout.save_geojson(geojson_data, config.sanitized_geojson_file)
+	roadmaptools.inout.save_geojson(geojson_data, output_filepath)

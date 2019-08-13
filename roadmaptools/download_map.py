@@ -2,12 +2,14 @@ import roadmaptools.inout
 import overpass
 
 from typing import Tuple, List
+from roadmaptools.printer import print_info
 
 
 HIGHWAY_FILTER = 'highway~"(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|unclassified_link|residential|residential_link|living_street)"'
 
 
 def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], filepath: str):
+	print_info("Downloading map from Overpass API")
 	api = overpass.API(debug=True)
 	query = '(('
 
