@@ -26,13 +26,13 @@ def compute_edge_parameters(input_filename: str, output_filename: str):
 	for item in geojson_content['features']:
 		# transformed coordianates
 		coords = item['geometry']['coordinates']
-		projected_coord_from = roadmaptools.utm.wgs84_to_utm_1E2(coords[0][1], coords[0][0], projection)
-		projected_coord_to = roadmaptools.utm.wgs84_to_utm_1E2(coords[-1][1], coords[-1][0], projection)
-		item['properties']["from_1E2"] = projected_coord_from
-		item['properties']["to_1E2"] = projected_coord_to
+		projected_coords = []
+		for coord in coords:
+			projected_coords.append(roadmaptools.utm.wgs84_to_utm_1E2(coord[1], coord[0]))
+		item['properties']['utm_coords'] = projected_coords
 
 		# edge length
-		item['properties']["length"] = roadmaptools.geometry.get_distance_int(projected_coord_from, projected_coord_to)
+		item['properties']["length"] = roadmaptools.geometry.get_length_from_coords(projected_coords)
 
 		# max speed
 		item['properties']['maxspeed'] = roadmaptools.estimate_speed_from_osm.get_posted_speed(item)
