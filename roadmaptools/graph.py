@@ -4,8 +4,9 @@ import roadmaptools.utm
 import roadmaptools.geometry
 import roadmaptools.shp
 import roadmaptools.inout
+import roadmaptools.plotting
 
-from typing import Dict, Union, Optional, List, Callable
+from typing import Dict, Union, Optional, List, Callable, Tuple
 from networkx import DiGraph
 from shapely.geometry import Point
 from scipy.spatial.kdtree import KDTree
@@ -102,15 +103,6 @@ class RoadGraph:
             if self.use_cache:
                 networkx.write_gpickle(self.graph, self.cache_filepath)
 
-    def _get_node(self, x: float, y: float) -> Node:
-        id = roadmaptools.utm.get_id_from_utm_coords(x, y)
-        if id in self.node_map:
-            return self.node_map[id]
-        else:
-            node = self.node_creator(x, y, id)
-            self.node_map[id] = node
-            return node
-
     def get_precise_path_length(self, edge_from: LinestringEdge, edge_to: LinestringEdge,
                                 point_from: Point, point_to: Point) -> Optional[float]:
         from_node = edge_from.node_to
@@ -151,3 +143,22 @@ class RoadGraph:
             to_node = node_list[index]
 
         return edge_list
+
+    def export_for_matplotlib(self) -> Tuple[List[float], List[float]]:
+
+        def iterator():
+            for edge in self.graph.edges:
+                yield ((edge[0].x, edge[1].x),(edge[0].y), edge[1].y)
+
+        iterator = iterator()
+
+        return roadmaptools.plotting.export_for_matplotlib(iterator)
+
+    def _get_node(self, x: float, y: float) -> Node:
+        id = roadmaptools.utm.get_id_from_utm_coords(x, y)
+        if id in self.node_map:
+            return self.node_map[id]
+        else:
+            node = self.node_creator(x, y, id)
+            self.node_map[id] = node
+            return node

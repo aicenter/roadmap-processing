@@ -102,8 +102,10 @@ def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
     f = open(filepath, "r")
     return csv.reader(f, delimiter=delimiter)
 
-def load_csv_to_pandas(filepath: str, delimiter: str = ",") -> pandas.DataFrame:
+def load_csv_to_pandas(filepath: str, delimiter: str = ",", header: List[str] = None) -> pandas.DataFrame:
     print_info("Loading csv file from: {} to dataframe".format(os.path.realpath(filepath)))
+    if header:
+        return pandas.read_csv(filepath, names=header)
     return pandas.read_csv(filepath)
 
 def save_csv(data: Iterable[Iterable[str]], filepath: str, append: bool = False):
