@@ -1,5 +1,11 @@
+from setuptools.command.rotate import rotate
+
+import roadmaptools.utm
+
 from typing import Tuple, List, Iterable
 from geojson import FeatureCollection
+
+from roadmaptools.utm import TransposedUTM
 
 
 def geojson_iterator(fc: FeatureCollection) -> Iterable[Tuple[Tuple[float, float],Tuple[float, float]]]:
@@ -16,12 +22,17 @@ def export_for_matplotlib(edges_iterator: Iterable[Tuple[Tuple[float, float],Tup
 		-> Tuple[List[float], List[float]]:
 	xlist = []
 	ylist = []
+	projection = None
 	for edge in edges_iterator:
-		xlist.append(edge[0][0])
-		xlist.append(edge[1][0])
+		if not projection:
+			projection = roadmaptools.utm.TransposedUTM.from_gps(edge[0][1], edge[0][0])
+		from_coords = roadmaptools.utm.wgs84_to_utm(edge[0][1], edge[0][0], projection)
+		to_coords = roadmaptools.utm.wgs84_to_utm(edge[1][1], edge[1][0], projection)
+		xlist.append(from_coords[0])
+		xlist.append(to_coords[0])
 		xlist.append(None)
-		ylist.append(edge[0][1])
-		ylist.append(edge[1][1])
+		ylist.append(from_coords[1])
+		ylist.append(to_coords[1])
 		ylist.append(None)
 	return xlist, ylist
 
