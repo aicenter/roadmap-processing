@@ -109,3 +109,11 @@ def get_angle_between_points(point_from: Point, point_to: Point) -> float:
 	angle_trans = angle if angle > 0 else 2 * math.pi - abs(angle)
 
 	return angle_trans
+
+
+def linestring_to_points(linestring: LineString) -> List[Point]:
+	points = []
+	for index, x in enumerate(linestring.xy[0]):
+		points.append(Point(x, linestring.xy[1][index]))
+
+	return points

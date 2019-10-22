@@ -5,8 +5,21 @@ import sys
 import argparse
 import time
 
+from geojson import Feature
 from roadmaptools.printer import print_info
 from roadmaptools.init import config
+
+# https://wiki.openstreetmap.org/wiki/OSM_tags_for_routing/Maxspeed
+MPH = 1.60934
+SPEED_CODE_DICT = {'CZ': {'default':50, 'urban': 50, 'living_street':20 ,'pedestrian':20,
+                          'motorway':80, 'motorway_link':80,'trunk':80, 'trunk_link':80 },
+
+                   'US': {'default':30*MPH, 'living_street':20*MPH, 'residential':25*MPH, 'primary':45*MPH,
+                          'motorway':55*MPH, 'motorway_link':55*MPH,'trunk':5*MPH, 'trunk_link':55*MPH,
+                          'secondary':55*MPH, 'tertial':55*MPH, 'unclassified':55*MPH }}
+
+
+
 
 # length is computed here too!!!
 def estimate_posted_speed(input_filename: str, output_filename: str):
@@ -47,18 +60,76 @@ def load_geojson(in_stream):
     return json_dict
 
 
+
 def get_speeds(json_dict):
+
     for item in json_dict['features']:
-        if 'maxspeed' not in item['properties']:
-            if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
-                item['properties']['maxspeed'] = 130
-            elif item['properties']['highway'] == 'living_street':  # for czechia
-                item['properties']['maxspeed'] = 20
-            else:
-                item['properties']['maxspeed'] = 50
+        if item['geometry']['type'].lower() == 'linestring':
+            item['properties']['maxspeed'] = get_posted_speed(item)
+            item['properties']['length_gps'] = get_length(item['geometry']['coordinates'])
+
+
+
+def parse_speed(speed)->float:
+    """
+
+    :param str_: List or string,  speed from osm data
+    :return: float value of maximum allowed speed
+    """
+    #  list
+    speed = speed[-1] if isinstance(speed, list) else speed
+
+    # just a number - speed in kmh
+    if speed.isnumeric():
+        return float(speed)
+
+    # speed with unit
+    speed, unit = speed.split(' ')
+    if unit.lower() == 'mph':
+        return float(speed.split(' ')[0])*MPH
+    else:
+        return float(speed.split(' ')[0])
+
+
+
+def get_country(edge):
+    x,y = edge['geometry']['coordinates'][0]
+    if float(x) < 0: return 'US'
+    else: return 'CZ'
+
+
+def get_speed_by_code(country:str, code:str):
+    country_codes = SPEED_CODE_DICT[country]
+    if code in country_codes.keys():
+        return country_codes[code]
+    else:
+        return country_codes['default']
+
+
+def get_posted_speed(edge: Feature) -> int:
+
+    if 'maxspeed' in edge['properties']:
+        speed = edge['properties']['maxspeed']
+        if isinstance(speed, str) and speed.isalpha():
+            country, code = speed.split(':')
+            if not country in SPEED_CODE_DICT:
+                raise Exception('Country code missing')
+            return get_speed_by_code(country, code)
         else:
-            item['properties']['maxspeed'] = int(item['properties']['maxspeed'])
-        item['properties']['length'] = get_length(item['geometry']['coordinates'])
+            return parse_speed(speed)
+
+
+    else:
+        country = get_country(edge)
+        if not country in SPEED_CODE_DICT:
+            raise Exception('Country code missing')
+
+        highway_tag = edge['properties']['highway']
+        if highway_tag in SPEED_CODE_DICT[country].keys():
+            return  SPEED_CODE_DICT[country][highway_tag]
+        else:
+            return SPEED_CODE_DICT[country]['default']
+
 
 
 def save_geojson(json_dict, out_stream):
@@ -85,3 +156,5 @@ if __name__ == '__main__':
     estimate_speeds(input_stream, output_stream)
     input_stream.close()
     output_stream.close()
+    #
+

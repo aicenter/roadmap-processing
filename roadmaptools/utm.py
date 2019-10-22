@@ -73,6 +73,18 @@ def wgs84_to_utm(latitude: float, longitude: float, projection: TransposedUTM = 
     return projection.wgs84_to_utm(latitude, longitude)
 
 
+def wgs84_to_utm_1E2(latitude: float, longitude: float, projection: TransposedUTM = default_projection) \
+        -> Tuple[int, int]:
+    """
+    Returns utm coordinates in centimeter precision. Coresponds to the Geographtools implementation.
+    :param latitude: Latitude WGS84
+    :param longitude: Longitude WGS84
+    :param projection: UTM projection
+    :return: Projected coordinates as a centimeter precision integer.
+    """
+    return tuple(int(round(coord * 1E2)) for coord in wgs84_to_utm(latitude, longitude, projection))
+
+
 def utm_to_wgs84(latitude: float, longitude: float, projection: TransposedUTM = default_projection) -> Tuple[
     float, float]:
     return projection.utm_to_wgs84(latitude, longitude)
