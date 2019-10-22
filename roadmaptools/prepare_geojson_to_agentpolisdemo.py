@@ -124,15 +124,27 @@ def load_graph(json_dict):
             if len(data) == 0:
                 data = []
             g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=data, lanes=lanes)
+    print('load_graph: ', g.number_of_nodes(), g.number_of_edges())
     return g
 
 
+    # for n, nbrsdict in G.adjacency():
+    #      for nbr, eattr in nbrsdict.items():
+    #         if 'weight' in eattr:
+    #             pass
+    #
 def create_DiGraph(g):
     temp_gr = nx.DiGraph()
-    for n, nbrsdict in g.adjacency_iter():
+    print('createDiGrahp, input: ', g.number_of_nodes(), g.number_of_edges())
+    for n, nbrsdict in list(g.adjacency()):
         for nbr, keydict in nbrsdict.items():
-            for key, d in keydict.items():
-                temp_gr.add_edge(n, nbr, lanes=d['lanes'], id=d['id'], others=d['others'])
+        #    for key, d in keydict.items():
+            #    print(key, d )   # d is int
+                temp_gr.add_edge(n, nbr,
+                             lanes=keydict['lanes'],
+                             id=keydict['id'],
+                             others=keydict['others'])
+    print('createDiGrahp, return: ', g.number_of_nodes(), g.number_of_edges())
     return temp_gr
 
 
@@ -165,11 +177,12 @@ def prepare_graph_to_agentpolisdemo():
 
 
 def get_nodes_and_edges_for_agentpolisdemo(json_dict):
-    graph = load_graph(json_dict)
-    biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
-    new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-
-    detect_parallel_edges(new_graph)
+    # graph = load_graph(json_dict)
+    # biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
+    # new_graph = traverse_and_create_graph(graph, biggest_subgraph)
+    # print('get_nodes_and_edges, new_graph, ', new_graph.number_of_nodes(), new_graph.number_of_edges())
+    new_graph = load_graph(json_dict)
+ #   detect_parallel_edges(new_graph)
     id_iter = find_max_id(json_dict) + 1  # new id iterator
     for edge in temp_edges:
         add_new_edges(json_dict, edge, id_iter)
@@ -204,6 +217,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    prepare_graph_to_agentpolisdemo(input_stream, output_stream)
+    prepare_graph_to_agentpolisdemo()
     input_stream.close()
     output_stream.close()
