@@ -16,7 +16,7 @@ SPEED_CODE_DICT = {'CZ': {'default':50, 'urban': 50, 'living_street':20 ,'pedest
 
                    'US': {'default':30*MPH, 'living_street':20*MPH, 'residential':25*MPH, 'primary':45*MPH,
                           'motorway':55*MPH, 'motorway_link':55*MPH,'trunk':5*MPH, 'trunk_link':55*MPH,
-                          'secondary':55*MPH, 'tertial':55*MPH, 'unclassified':55*MPH }}
+                          'secondary':55*MPH, 'tertiary':55*MPH, 'unclassified':55*MPH }}
 
 
 
