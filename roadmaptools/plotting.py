@@ -18,7 +18,21 @@ def geojson_iterator(fc: FeatureCollection) -> Iterable[Tuple[Tuple[float, float
 			from_coords = to_coords
 
 
-def export_for_matplotlib(edges_iterator: Iterable[Tuple[Tuple[float, float],Tuple[float, float]]])\
+def export_nodes_for_matplotlib(nodes_iterator: Iterable[Tuple[float, float]])\
+		-> Tuple[List[float], List[float]]:
+	xlist = []
+	ylist = []
+	projection = None
+	for point in nodes_iterator:
+		if not projection:
+			projection = roadmaptools.utm.TransposedUTM.from_gps(point[0], point[1])
+		coords = roadmaptools.utm.wgs84_to_utm(point[0], point[1], projection)
+		xlist.append(coords[0])
+		ylist.append(coords[1])
+	return xlist, ylist
+
+
+def export_edges_for_matplotlib(edges_iterator: Iterable[Tuple[Tuple[float, float], Tuple[float, float]]])\
 		-> Tuple[List[float], List[float]]:
 	xlist = []
 	ylist = []

@@ -152,7 +152,7 @@ class RoadGraph:
 
         iterator = iterator()
 
-        return roadmaptools.plotting.export_for_matplotlib(iterator)
+        return roadmaptools.plotting.export_edges_for_matplotlib(iterator)
 
     def _get_node(self, x: float, y: float) -> Node:
         id = roadmaptools.utm.get_id_from_utm_coords(x, y)
