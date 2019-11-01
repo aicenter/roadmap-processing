@@ -1,7 +1,7 @@
 import sys
 # print(sys.path)
 
-# this fixes the geojson name clash, because python does not provide a realy working absolute imports
+# this fixes the geojson name clash, because python does not provide a really working absolute imports
 # current_dir = sys.path[0]
 # sys.path = sys.path[1:]
 import geojson
@@ -19,10 +19,11 @@ import csv
 # import gpxpy
 # import gpxpy.gpx
 import gpx_lite
-from gpx_lite.gpx import GPX
+import pandas
 
 from typing import Iterable, Callable, Dict, Tuple, List, Union
 from tqdm import tqdm
+from gpx_lite.gpx import GPX
 from logging import info
 # from gpxpy.gpx import GPX
 from roadmaptools.init import config
@@ -101,9 +102,16 @@ def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
     f = open(filepath, "r")
     return csv.reader(f, delimiter=delimiter)
 
+def load_csv_to_pandas(filepath: str, delimiter: str = ",", header: List[str] = None) -> pandas.DataFrame:
+    print_info("Loading csv file from: {} to dataframe".format(os.path.realpath(filepath)))
+    if header:
+        return pandas.read_csv(filepath, names=header)
+    return pandas.read_csv(filepath)
 
-def save_csv(data: List[List[str]], filepath: str):
-    with open(filepath, 'w', newline='') as csvfile:
+def save_csv(data: Iterable[Iterable[str]], filepath: str, append: bool = False):
+    mode = 'a' if append else 'w'
+    print_info("Saving csv file to: {}".format(os.path.realpath(filepath)))
+    with open(filepath, mode, newline='') as csvfile:
         writer = csv.writer(csvfile)
         for row in data:
             writer.writerow(row)
@@ -150,13 +158,15 @@ def load_graph_from_geojson(filepath: str) -> nx.DiGraph:
     return load_graph(data)
 
 
-def load_pickle(filename: str):
-    with open(filename, 'rb') as pickled_data:
+def load_pickle(filepath: str):
+    print_info("Loading pickle file from: {}".format(os.path.realpath(filepath)))
+    with open(filepath, 'rb') as pickled_data:
         data = pickle.load(pickled_data)
 
     return data
 
 
-def save_pickle(data, filename):
-    with open(filename, 'wb') as f:
+def save_pickle(data, filepath):
+    print_info("Saving pickle file to: {}".format(os.path.realpath(filepath)))
+    with open(filepath, 'wb') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)

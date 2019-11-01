@@ -5,8 +5,12 @@ import sys
 import argparse
 import time
 
+from geojson import Feature
 from roadmaptools.printer import print_info
 from roadmaptools.init import config
+
+SPEED_CODE_DICT = {'CZ:urban': 50}
+
 
 # length is computed here too!!!
 def estimate_posted_speed(input_filename: str, output_filename: str):
@@ -49,16 +53,24 @@ def load_geojson(in_stream):
 
 def get_speeds(json_dict):
     for item in json_dict['features']:
-        if 'maxspeed' not in item['properties']:
-            if item['properties']['highway'] == 'motorway' or item['properties']['highway'] == 'motorway_link':  # for czechia
-                item['properties']['maxspeed'] = 130
-            elif item['properties']['highway'] == 'living_street':  # for czechia
-                item['properties']['maxspeed'] = 20
-            else:
-                item['properties']['maxspeed'] = 50
+        item['properties']['maxspeed'] = get_posted_speed(item)
+
+        item['properties']['length_gps'] = get_length(item['geometry']['coordinates'])
+
+
+def get_posted_speed(edge: Feature) -> int:
+    if 'maxspeed' not in edge['properties']:
+        if edge['properties']['highway'] == 'motorway' or edge['properties']['highway'] == 'motorway_link':  # for czechia
+            return 130
+        elif edge['properties']['highway'] == 'living_street':  # for czechia
+            return 20
         else:
-            item['properties']['maxspeed'] = int(item['properties']['maxspeed'])
-        item['properties']['length'] = get_length(item['geometry']['coordinates'])
+            return 50
+    else:
+        try:
+            return int(edge['properties']['maxspeed'])
+        except:
+            return SPEED_CODE_DICT[edge['properties']['maxspeed']]
 
 
 def save_geojson(json_dict, out_stream):

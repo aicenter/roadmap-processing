@@ -1,12 +1,13 @@
 from roadmaptools.init import config
 
-from geojson import LineString, Feature
+from typing import Dict, List
+from geojson import LineString, Feature, FeatureCollection
 import networkx as nx
 import codecs
 import roadmaptools.inout
-from roadmaptools.simplify_graph import prepare_to_saving_optimized
+from roadmaptools.simplify_graph import _prepare_to_saving_optimized
 import copy
-from roadmaptools.export_nodes_and_id_maker import export_points_to_geojson, get_ids
+from roadmaptools.export_nodes_and_id_maker import get_node_collection, get_ids
 import sys
 import argparse
 import roadmaptools.sanitize
@@ -124,27 +125,15 @@ def load_graph(json_dict):
             if len(data) == 0:
                 data = []
             g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=data, lanes=lanes)
-    print('load_graph: ', g.number_of_nodes(), g.number_of_edges())
     return g
 
 
-    # for n, nbrsdict in G.adjacency():
-    #      for nbr, eattr in nbrsdict.items():
-    #         if 'weight' in eattr:
-    #             pass
-    #
 def create_DiGraph(g):
     temp_gr = nx.DiGraph()
-    print('createDiGrahp, input: ', g.number_of_nodes(), g.number_of_edges())
-    for n, nbrsdict in list(g.adjacency()):
+    for n, nbrsdict in g.adjacency():
         for nbr, keydict in nbrsdict.items():
-        #    for key, d in keydict.items():
-            #    print(key, d )   # d is int
-                temp_gr.add_edge(n, nbr,
-                             lanes=keydict['lanes'],
-                             id=keydict['id'],
-                             others=keydict['others'])
-    print('createDiGrahp, return: ', g.number_of_nodes(), g.number_of_edges())
+            for key, d in keydict.items():
+                temp_gr.add_edge(n, nbr, lanes=d['lanes'], id=d['id'], others=d['others'])
     return temp_gr
 
 
@@ -160,10 +149,10 @@ def prepare_graph_to_agentpolisdemo():
         add_new_edges(json_dict, edge, id_iter)
         id_iter += 2
     json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    prepare_to_saving_optimized(graph, json_dict)
+    _prepare_to_saving_optimized(graph, json_dict)
     json_dict['features'].extend(temp_features)
     get_ids(json_dict)
-    nodes = export_points_to_geojson(json_dict)
+    nodes = get_node_collection(json_dict)
     # print len(json_dict['features'])
     # output_stream = open("/home/martin/MOBILITY/GITHUB/smaz/agentpolis-demo/python_scripts/data/nodes.geojson",'w')
     roadmaptools.inout.save_geojson(nodes, config.ap_nodes_file)
@@ -176,26 +165,31 @@ def prepare_graph_to_agentpolisdemo():
     # output_stream.close()
 
 
-def get_nodes_and_edges_for_agentpolisdemo(json_dict):
+def get_nodes_and_edges_for_agentpolisdemo(json_dict) -> List[FeatureCollection]:
+    """
+
+    :param json_dict:
+    :return: [edges,nodes] list
+    """
+
     # graph = load_graph(json_dict)
     # biggest_subgraph = roadmaptools.sanitize.get_biggest_component(graph)
     # new_graph = traverse_and_create_graph(graph, biggest_subgraph)
-    # print('get_nodes_and_edges, new_graph, ', new_graph.number_of_nodes(), new_graph.number_of_edges())
-    new_graph = load_graph(json_dict)
- #   detect_parallel_edges(new_graph)
-    id_iter = find_max_id(json_dict) + 1  # new id iterator
-    for edge in temp_edges:
-        add_new_edges(json_dict, edge, id_iter)
-        id_iter += 2
-    json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
-    prepare_to_saving_optimized(new_graph, json_dict)
-    json_dict['features'].extend(temp_features)
+    #
+    # detect_parallel_edges(new_graph)
+    # id_iter = find_max_id(json_dict) + 1  # new id iterator
+    # for edge in temp_edges:
+    #     add_new_edges(json_dict, edge, id_iter)
+    #     id_iter += 2
+    # json_dict['features'] = [i for i in json_dict["features"] if i]  # remove empty dicts
+    # prepare_to_saving_optimized(new_graph, json_dict)
+    # json_dict['features'].extend(temp_features)
     get_ids(json_dict)
-    nodes = export_points_to_geojson(json_dict)
+    nodes = get_node_collection(json_dict)
 
-    gr = load_graph(json_dict) # remove duplicated edges
-    gr = create_DiGraph(gr)
-    prepare_to_saving_optimized(gr, json_dict)
+    # gr = load_graph(json_dict) # remove duplicated edges
+    # gr = create_DiGraph(gr)
+    # prepare_to_saving_optimized(gr, json_dict)
     return [json_dict, nodes]
 
 
@@ -217,6 +211,6 @@ if __name__ == '__main__':
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
 
-    prepare_graph_to_agentpolisdemo()
+    prepare_graph_to_agentpolisdemo(input_stream, output_stream)
     input_stream.close()
     output_stream.close()
