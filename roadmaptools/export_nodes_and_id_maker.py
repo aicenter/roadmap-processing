@@ -39,20 +39,19 @@ def load_graph(json_dict):
     return g
 
 
-def export_points_to_geojson(json_dict):
+def get_node_collection(json_dict):
     g = load_graph(json_dict)
     list_of_features = []
+    index = 0
     for n in g.nodes():
         node_id = roadmaptools.graph.get_node_id(n)
         point = Point(n)
-        feature = Feature(geometry=point, properties={'node_id': node_id})
+        feature = Feature(geometry=point, properties={'node_id': node_id, 'index': index})
         list_of_features.append(feature)
+        index += 1
 
     json_dict_with_points = FeatureCollection(features=list_of_features)
 
-    # with open('data/output-points.geojson', 'w') as outfile:
-    #     geojson.dump(json_dict_with_points, outfile)
-    # outfile.close()
     return json_dict_with_points
 
 

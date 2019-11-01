@@ -1,4 +1,3 @@
-from __future__ import division
 import math
 import geojson
 import codecs
@@ -47,7 +46,13 @@ def get_node(node):  # latlon
     return (node[1], node[0])
 
 
-def get_distance_between_coords(point1, point2):  # return in meters
+def get_distance_between_coords(point1, point2):
+    """
+    Computes the distance between to GPS coordinates.
+    :param point1:
+    :param point2:
+    :return: distance between two GPS coordinates in meters
+    """
     R = 6371000
     lat1 = math.radians(point1[0])
     lat2 = math.radians(point2[0])
