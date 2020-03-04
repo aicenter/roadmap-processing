@@ -79,9 +79,9 @@ def get_osm_from_mapzen():
     print_info("Map from mapzen ready.")
 
 
-def load_json(filepath: str) -> Union[Dict, List]:
+def load_json(filepath: str, encoding=None) -> Union[Dict, List]:
     print_info("Loading json file from: {}".format(os.path.realpath(filepath)))
-    return json.load(open(filepath))
+    return json.load(open(filepath, encoding=encoding))
 
 
 def load_geojson(filepath: str) -> geojson.feature.FeatureCollection:

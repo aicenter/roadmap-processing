@@ -8,14 +8,22 @@ from geojson import FeatureCollection
 from roadmaptools.utm import TransposedUTM
 
 
-def geojson_iterator(fc: FeatureCollection) -> Iterable[Tuple[Tuple[float, float],Tuple[float, float]]]:
-	for edge in fc['features']:
-		from_coords = None
-		for coordinates in edge['geometry']['coordinates']:
-			to_coords = coordinates
-			if from_coords:
-				yield (([from_coords[0], from_coords[1]]),([to_coords[0], to_coords[1]]))
-			from_coords = to_coords
+def geojson_edges_iterator(fc: FeatureCollection) -> Iterable[Tuple[Tuple[float, float], Tuple[float, float]]]:
+	for f in fc['features']:
+		if f["geometry"]["type"] == "LineString":
+			from_coords = None
+			for coordinates in f['geometry']['coordinates']:
+				to_coords = coordinates
+				if from_coords:
+					yield (([from_coords[0], from_coords[1]]),([to_coords[0], to_coords[1]]))
+				from_coords = to_coords
+
+
+def geojson_node_iterator(fc: FeatureCollection) -> Iterable[Tuple[float, float]]:
+	for f in fc['features']:
+		if f["geometry"]["type"] == "Point":
+			coordinates = f['geometry']['coordinates']
+			yield (coordinates[0], coordinates[1])
 
 
 def export_nodes_for_matplotlib(nodes_iterator: Iterable[Tuple[float, float]])\
