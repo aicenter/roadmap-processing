@@ -26,14 +26,12 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 
 nonempty_columns = set()
 
-
 def _is_int(string: str) -> bool:
 	try:
 		int(string)
 		return True
 	except ValueError:
 		return False
-
 
 def clean_geojson_files(input_file_path: str = config.geojson_file, output_file_path: str = config.cleaned_geojson_file,
 						keep_attributes: Set[str] = SET_OF_USEFUL_PROPERTIES, remove_attributes: Set[str] = None):

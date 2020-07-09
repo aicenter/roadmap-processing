@@ -11,11 +11,19 @@ HIGHWAY_FILTER = 'highway~"(motorway|motorway_link|trunk|trunk_link|primary|prim
 
 
 def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], filepath: str):
+	"""
+	Downloads osm map and saves it as .geojson file.
+	:param bounding_boxes: Order of coordinates in bounding box: (min lat, min lon, max lan, max lon)
+	:param filepath: path to output file
+	:return:
+	"""
 	print_info("Downloading map from Overpass API")
 	api = overpass.API(debug=True, timeout=600)
 	query = '(('
 
 	for bounding_box in bounding_boxes:
+		if bounding_box[0] >= bounding_box[2] or bounding_box[1] >= bounding_box[3]:
+			raise Exception('Wrong order in: ', bounding_box)
 		query += 'way({})[{}][access!="no"];'.format(",".join(map(str, list(bounding_box))), HIGHWAY_FILTER)
 
 	query += ')->.edges;.edges >->.nodes;);'

@@ -210,7 +210,7 @@ if __name__ == '__main__':
         input_stream = codecs.open(args.input, encoding='utf8')
     if args.output is not None:
         output_stream = codecs.open(args.output, 'w')
-
-    prepare_graph_to_agentpolisdemo(input_stream, output_stream)
+        
+    prepare_graph_to_agentpolisdemo()
     input_stream.close()
     output_stream.close()
