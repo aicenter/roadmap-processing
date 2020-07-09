@@ -1,9 +1,10 @@
-# 3.1.0
+# 4.0.0
 ## Added
 - GeoJSON node iterator added to plotting
 
 ## Changed
 - inout.load_json now accepts encoding parameter
+- GeoJSON iterator renamed to GeoJSON edge iterator
 
 ## Fixed
 - GeoJSON edge iterator in plotting now handles feature collections that contains other feature types than LineStirng

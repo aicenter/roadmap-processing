@@ -24,6 +24,7 @@ class RoadmaptoolsConfig(Config):
         self.osm_filter_params = properties.get("osm_filter_params")
 
 
+        self.cities_envelopes = properties.get("cities_envelopes")
         pass
 
 config: RoadmaptoolsConfig = fconfig.configuration.load((RoadmaptoolsConfig, None))

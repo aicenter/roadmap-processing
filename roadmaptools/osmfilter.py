@@ -29,6 +29,7 @@ def filter_osm_file():
         else:
             filter_command = '%s "%s" %s > "%s"' % (
             command, config.osm_map_filename, params, config.filtered_osm_filename)
+        print_info("Running the osmfilter: {}".format(filter_command))
         os.system(filter_command)
     else:
         print_info('Osmfilter not available. Exiting.')

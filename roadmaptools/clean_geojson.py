@@ -27,6 +27,14 @@ dict_of_useful_properties = {'highway': str, 'id': int, 'lanes': int, 'maxspeed'
 nonempty_columns = set()
 
 
+def _is_int(string: str) -> bool:
+	try:
+		int(string)
+		return True
+	except ValueError:
+		return False
+
+
 def clean_geojson_files(input_file_path: str = config.geojson_file, output_file_path: str = config.cleaned_geojson_file,
 						keep_attributes: Set[str] = SET_OF_USEFUL_PROPERTIES, remove_attributes: Set[str] = None):
 	print_info('Cleaning geoJSON - input file: {}, cleaned file: {}'.format(input_file_path, output_file_path))
@@ -104,7 +112,7 @@ def create_desimplified_edge(coord_u, coord_v, item: Feature, is_forward: bool):
 		# 	item['properties']['lanes'] = int(item['properties']['lanes']) - 1
 		# elif not is_forward and 'lanes' in item['properties']:
 		# 	item['properties']['lanes'] = 1
-		elif 'lanes' in item['properties'] and int(item['properties']['lanes']) >= 2:
+		elif 'lanes' in item['properties'] and _is_int(item['properties']['lanes']) and int(item['properties']['lanes']) >= 2:
 			item['properties']['lanes'] = int(item['properties']['lanes']) / 2
 		else:
 			item['properties']['lanes'] = 1

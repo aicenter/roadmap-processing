@@ -1,3 +1,5 @@
+from roadmaptools.init import config
+
 import roadmaptools.inout
 import overpass
 
@@ -10,7 +12,7 @@ HIGHWAY_FILTER = 'highway~"(motorway|motorway_link|trunk|trunk_link|primary|prim
 
 def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], filepath: str):
 	print_info("Downloading map from Overpass API")
-	api = overpass.API(debug=True)
+	api = overpass.API(debug=True, timeout=600)
 	query = '(('
 
 	for bounding_box in bounding_boxes:
@@ -22,4 +24,5 @@ def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], fil
 
 
 if __name__ == '__main__':
-	download_cities([(49.94, 14.22, 50.17, 14.71), (49.11, 16.42, 49.30,16.72)], "test.geojson")
+	# download_cities([(49.94, 14.22, 50.17, 14.71), (49.11, 16.42, 49.30,16.72)], "test.geojson")
+	download_cities([(envelope["south"], envelope["east"], envelope["north"], envelope["west"]) for _, envelope in config.cities_envelopes.items()] , config.geojson_file)
