@@ -1,3 +1,11 @@
+# 4.0.1
+
+## Fixed
+- country specific speed codes extended by US codes
+- string detection bug fixed in get_posted_speed method
+- config bug with negative coordinates treated as float fixed in download_map.py
+
+
 # 4.0.0
 ## Added
 - GeoJSON node iterator added to plotting
