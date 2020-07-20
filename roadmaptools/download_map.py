@@ -22,7 +22,7 @@ def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], fil
 	query = '(('
 
 	for bounding_box in bounding_boxes:
-		if bounding_box[0] >= bounding_box[2] or bounding_box[1] >= bounding_box[3]:
+		if float(bounding_box[0]) >= float(bounding_box[2]) or float(bounding_box[1]) >= float(bounding_box[3]):
 			raise Exception('Wrong order in: ', bounding_box)
 		query += 'way({})[{}][access!="no"];'.format(",".join(map(str, list(bounding_box))), HIGHWAY_FILTER)
 

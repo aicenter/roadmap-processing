@@ -16,7 +16,7 @@ MPH = 1.60934 # miles to km
 
 
 # https://wiki.openstreetmap.org/wiki/OSM_tags_for_routing/Maxspeed
-SPEED_CODE_DICT = {'CZ': {'default':50, 'urban': 50, 'living_street':20 ,'pedestrian':20,
+SPEED_CODE_DICT = {'CZ': {'default':50, 'urban': 50,'living_street':20 ,'pedestrian':20,
                           'motorway':80, 'motorway_link':80,'trunk':80, 'trunk_link':80 },
 
                    'US': {'default':30*MPH, 'living_street':20*MPH, 'residential':25*MPH, 'primary':45*MPH,
@@ -87,6 +87,7 @@ def parse_speed(speed)->float:
     if speed.isnumeric():
         return float(speed)
 
+
     speed, unit = speed.split(' ')
     if unit.lower() == 'mph':
         return float(speed.split(' ')[0])*MPH
@@ -103,6 +104,7 @@ def get_country(edge: Feature) -> str:
     :param edge: geojson feature
     :return: country code
     """
+
     x,y = edge['geometry']['coordinates'][0]
     if float(x) < 0: return 'US'
     else: return 'CZ'
@@ -123,11 +125,10 @@ def get_speed_by_code(country_code:str, speed_tag:str)->float:
 
 
 def get_posted_speed(edge: Feature) -> float:
-
     if 'maxspeed' in edge['properties']:
         speed = edge['properties']['maxspeed']
 
-        if isinstance(speed, str) and speed.isalpha(): # country and code, CZ:urban
+        if(':' in speed):  # country and code, CZ:urban
             country, code = speed.split(':')
             if not country in SPEED_CODE_DICT:
                 raise Exception('Country code missing')
