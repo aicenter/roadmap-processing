@@ -102,17 +102,19 @@ def load_csv(filepath: str, delimiter: str = ",") -> Iterable:
     f = open(filepath, "r")
     return csv.reader(f, delimiter=delimiter)
 
+
 def load_csv_to_pandas(filepath: str, delimiter: str = ",", header: List[str] = None) -> pandas.DataFrame:
     print_info("Loading csv file from: {} to dataframe".format(os.path.realpath(filepath)))
     if header:
         return pandas.read_csv(filepath, names=header)
     return pandas.read_csv(filepath)
 
-def save_csv(data: Iterable[Iterable[str]], filepath: str, append: bool = False):
+
+def save_csv(data: Iterable[Iterable[str]], filepath: str, append: bool = False, delimiter: str = ","):
     mode = 'a' if append else 'w'
     print_info("Saving csv file to: {}".format(os.path.realpath(filepath)))
     with open(filepath, mode, newline='') as csvfile:
-        writer = csv.writer(csvfile)
+        writer = csv.writer(csvfile, delimiter=delimiter)
         for row in data:
             writer.writerow(row)
 
