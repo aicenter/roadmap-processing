@@ -6,3 +6,4 @@ dist/
 roadmaptools.egg-info/
 #compiled files
 *.pyc
+.pytest_cache/

@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+from typing import Dict
 import geojson
 import networkx as nx
 import codecs
@@ -39,11 +40,12 @@ def simplify_geojson(input_file=config.sanitized_geojson_file, output_file=confi
     print_info('Simplifying geoJSON')
     start_time = time.time()
 
-    # l_check set True whether you don't want to simplify edges with different number of lanes
-    # c_check set True whether you don't want to simplify edges with different curvature
     geojson_file = roadmaptools.inout.load_geojson(input_file)
 
     print_info("Simplification process started")
+
+    # l_check set True whether you don't want to simplify edges with different number of lanes
+    # c_check set True whether you don't want to simplify edges with different curvature
     geojson_out = get_simplified_geojson(geojson_file, l_check=False, c_check=False)
 
     print_info('Simplification completed. (%.2f secs)' % (time.time() - start_time))
@@ -88,27 +90,55 @@ def create_digraph(graph: nx.MultiDiGraph) -> nx.DiGraph:
 
     # id_counter = _get_max_id_in_graph(graph) + 1
     new_graph = nx.DiGraph()
-    for n, nbrdict in graph.adjacency():
+    for node, nbrdict in graph.adjacency():
         for nbr, attributes in nbrdict.items():
             if not type(attributes) is dict:
                 id_counter = 0
                 for i in range(len(attributes)):
-                    if attributes[i]['others'] == [[]]:
-                        new_graph.add_edge(n, nbr, id='{}_{}'.format(attributes[i]['id'], id_counter), lanes=attributes[i]['lanes'],
-                                           others=attributes[i]['others'])
+                    properties = attributes[i]
+                    if properties['others'] == [[]]:
+                        new_graph.add_edge(node,
+                                           nbr,
+                                           id='{}_{}'.format(properties['id'], id_counter),
+                                           lanes=properties['lanes'],
+                                           others=properties['others'],
+                                           from_osm_id=properties['from_osm_id'],
+                                           to_osm_id = properties['to_osm_id']
+                                           )
                         id_counter += 1
                     else:
-                        temp_nbr = get_node(attributes[i]['others'][0])
-                        new_graph.add_edge(n, temp_nbr, id='{}_{}'.format(attributes[i]['id'], id_counter),
-                                           lanes=attributes[i]['lanes'], others=[[]])
+                        temp_nbr = get_node(properties['others'][0])
+                        new_graph.add_edge(
+                            node,
+                            temp_nbr,
+                            id='{}_{}'.format(attributes[i]['id'], id_counter),
+                            lanes=properties['lanes'],
+                            others=[[]],
+                            from_osm_id=properties['from_osm_id'],
+                            to_osm_id=properties['to_osm_id']
+                        )
                         id_counter += 1
-                        new_graph.add_edge(temp_nbr, nbr, id='{}_{}'.format(attributes[i]['id'], id_counter),
-                                           lanes=attributes[i]['lanes'], others=attributes[i]['others'][1:])
+                        new_graph.add_edge(
+                            temp_nbr,
+                            nbr,
+                            id='{}_{}'.format(properties['id'], id_counter),
+                            lanes=properties['lanes'],
+                            others=properties['others'][1:],
+                            from_osm_id=properties['from_osm_id'],
+                            to_osm_id=properties['to_osm_id']
+                        )
                         id_counter += 1
 
             else:
-                new_graph.add_edge(n, nbr, id=attributes['id'], lanes=attributes['lanes'], others=attributes[
-                    'others'])
+                new_graph.add_edge(
+                    node,
+                    nbr,
+                    id=attributes['id'],
+                    lanes=attributes['lanes'],
+                    others=attributes['others'],
+                    from_osm_id=attributes['from_osm_id'],
+                    to_osm_id=attributes['to_osm_id']
+                )
     return new_graph
 
 
@@ -129,13 +159,13 @@ def get_node(node):
     return (node[1], node[0])  # order latlon
 
 
-def try_find(id, temp_dict):
-    if id in temp_dict:
-        n1 = temp_dict[id]['node'][1]
-        n2 = temp_dict[id]['node'][0]
-        nbr1 = temp_dict[id]['neighbour'][1]
-        nbr2 = temp_dict[id]['neighbour'][0]
-        coords = filter(None, temp_dict[id]['coords'])
+def _try_find(edge_id: str, temp_dict: Dict[str, Dict]):
+    if edge_id in temp_dict:
+        n1 = temp_dict[edge_id]['node'][1]
+        n2 = temp_dict[edge_id]['node'][0]
+        nbr1 = temp_dict[edge_id]['neighbour'][1]
+        nbr2 = temp_dict[edge_id]['neighbour'][0]
+        coords = filter(None, temp_dict[edge_id]['coords'])
         ret = [False, [n1, n2]]
         for node in coords:
             ret.append(node)
@@ -146,15 +176,25 @@ def try_find(id, temp_dict):
 
 
 def _load_graph(json_dict: dict) -> nx.MultiDiGraph:
-    g = nx.DiGraph()
+    graph = nx.DiGraph()
     for item in tqdm(json_dict['features'], desc="creating road graph"):
         coord = item['geometry']['coordinates']
         coord_u = get_node(coord[0])
         coord_v = get_node(coord[-1])
-        if coord_u != coord_v or len(coord) != 2:  # prune loops without any purpose, save loops like traffic roundabout
-            lanes = item['properties']['lanes']
-            g.add_edge(coord_u, coord_v, id=item['properties']['id'], others=[[]], lanes=lanes)
-    return g
+
+        # prune loops without any purpose, save loops like traffic roundabout
+        if coord_u != coord_v or len(coord) != 2:
+            props = item['properties']
+            graph.add_edge(
+                coord_u,
+                coord_v,
+                id=item['properties']['id'],
+                others=[[]],
+                lanes=props['lanes'],
+                from_osm_id=props["from_osm_id"],
+                to_osm_id=props["to_osm_id"]
+            )
+    return graph
 
 
 def _simplify_graph(g: nx.MultiDiGraph, check_lanes):
@@ -219,30 +259,44 @@ def _simplify_curvature(json_dict):
             json_dict['features'][i].clear()
 
 
-def simplify_oneways(n, g, check_lanes):
-    edge_u = list(g.out_edges(n, data=True))[0][:2]
-    temp = reversed(edge_u)
-    edge_u = tuple(temp)
-    edge_v = list(g.in_edges(n, data=True))[0][:2]
-    new_id = list(g.out_edges(n, data=True))[0][2]['id']
-    coords = list(filter(None, list(g.in_edges(n, data=True))[0][2]['others'] + [[n[1], n[0]]]
-                         + list(g.out_edges(n, data=True))[0][2]['others']))
-    lanes_u = list(g.out_edges(n, data=True))[0][2]['lanes']
-    lanes_v = list(g.in_edges(n, data=True))[0][2]['lanes']
-    if edge_u != edge_v:
+def simplify_oneways(node, graph, check_lanes):
+    out_edge = list(graph.out_edges(node, data=True))[0]
+    # out_edge_coords = list(graph.out_edges(node, data=True))[0][:2]
+    out_edge_coords = tuple(reversed(out_edge[:2]))
+    out_edge_props = out_edge[2]
+    # temp = reversed(out_edge_coords)
+    # out_edge_coords = tuple(temp)
+    in_edge = list(graph.in_edges(node, data=True))[0]
+    # in_edge_coords = list(graph.in_edges(node, data=True))[0][:2]
+    in_edge_coords = in_edge[:2]
+    in_edge_props = in_edge[2]
+    new_id = out_edge_props['id']
+    coords = list(filter(None, in_edge_props['others'] + [[node[1], node[0]]] + out_edge_props['others']))
+    lanes_u = out_edge_props['lanes']
+    lanes_v = in_edge_props['lanes']
+    if out_edge_coords != in_edge_coords \
+            or (hash_list_of_lists_and_compare(in_edge_props['others'], out_edge_props['others'])):
         # remove edges and node
         if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
-            g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
-            g.remove_edge(edge_u[1], edge_u[0])
-            g.remove_edge(edge_v[0], edge_v[1])
-            g.remove_node(n)
-    elif edge_u == edge_v and hash_list_of_lists_and_compare(list(g.in_edges(n, data=True))[0][2]['others'],
-                                                             list(g.out_edges(n, data=True))[0][2]['others']):
-        if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
-            g.add_edge(edge_v[0], edge_u[0], id=new_id, others=coords, lanes=lanes_u)
-            g.remove_edge(edge_u[1], edge_u[0])
-            g.remove_edge(edge_v[0], edge_v[1])
-            g.remove_node(n)
+            graph.add_edge(
+                in_edge_coords[0],
+                out_edge_coords[0],
+                id=new_id,
+                others=coords,
+                lanes=lanes_u,
+                from_osm_id=in_edge_props['from_osm_id'],
+                to_osm_id=out_edge_props['to_osm_id']
+            )
+            graph.remove_edge(out_edge_coords[1], out_edge_coords[0])
+            graph.remove_edge(in_edge_coords[0], in_edge_coords[1])
+            graph.remove_node(node)
+    # elif out_edge_coords == edge_v and hash_list_of_lists_and_compare(list(graph.in_edges(node, data=True))[0][2]['others'],
+    #                                                          list(graph.out_edges(node, data=True))[0][2]['others']):
+    #     if lanes_u == lanes_v or lanes_u is None or lanes_v is None or check_lanes:  # merge only edges with same number of lanes
+    #         graph.add_edge(edge_v[0], out_edge_coords[0], id=new_id, others=coords, lanes=lanes_u)
+    #         graph.remove_edge(out_edge_coords[1], out_edge_coords[0])
+    #         graph.remove_edge(edge_v[0], edge_v[1])
+    #         graph.remove_node(node)
 
 
 def hash_list_of_lists_and_compare(list1, list2):
@@ -251,26 +305,40 @@ def hash_list_of_lists_and_compare(list1, list2):
     return set(temp_hash1) != set(temp_hash2)
 
 
-def simplify_twoways(n, g: nx.MultiDiGraph, check_lanes: bool):
-    edge_u1 = list(g.out_edges(n, data=True))[0][:2]
-    edge_u2 = list(g.out_edges(n, data=True))[1][:2]
-    temp1 = reversed(edge_u1)
-    edge_u1 = tuple(temp1)
-    temp2 = reversed(edge_u2)
-    edge_u2 = tuple(temp2)
-    new_id_out = list(g.out_edges(n, data=True))[0][2]['id']
-    new_id_in = list(g.in_edges(n, data=True))[0][2]['id']
-    coords_out = list(filter(None, list(g.in_edges(n, data=True))[1][2]['others'] + [[n[1], n[0]]]
-                             + list(g.out_edges(n, data=True))[0][2]['others']))
+def simplify_twoways(node, grapg: nx.MultiDiGraph, check_lanes: bool):
+    edge_to_1 = list(grapg.out_edges(node, data=True))[0]
+    coords_to_1 = tuple(reversed(edge_to_1[:2]))
+    edge_to_1_props = edge_to_1[2]
+    edge_to_2 = list(grapg.out_edges(node, data=True))[1]
+    coords_to_2 = tuple(reversed(edge_to_2[:2]))
+    edge_to_2_props = edge_to_2[2]
+    # coords_to_1 = list(grapg.out_edges(node, data=True))[0][:2]
+    # coords_to_2 = list(grapg.out_edges(node, data=True))[1][:2]
+    # temp1 = reversed(coords_to_1)
+    # coords_to_1 = tuple(temp1)
+    # temp2 = reversed(coords_to_2)
+    # coords_to_2 = tuple(temp2)
+
+    edge_from_1 = list(grapg.in_edges(node, data=True))[0]
+    coords_from_1 = edge_from_1[:2]
+    edge_from_1_props = edge_from_1[2]
+    edge_from_2 = list(grapg.in_edges(node, data=True))[1]
+    coords_from_2 = edge_from_2[:2]
+    edge_from_2_props = edge_from_2[2]
+    # coords_from_1 = list(grapg.in_edges(node, data=True))[0][:2]
+    # coords_from_2 = list(grapg.in_edges(node, data=True))[1][:2]
+
+    new_id_out = edge_to_1_props['id']
+    new_id_in = edge_from_1_props['id']
+    coords_out = list(filter(None, edge_from_2_props['others'] + [[node[1], node[0]]] + edge_to_1_props['others']))
     coords_in = list(reversed(coords_out))
-    edge_v1 = list(g.in_edges(n, data=True))[0][:2]
-    edge_v2 = list(g.in_edges(n, data=True))[1][:2]
-    edges_u = (edge_u1, edge_u2)
-    edges_v = (edge_v1, edge_v2)
-    lanes_u1 = list(g.out_edges(n, data=True))[0][2]['lanes']
-    lanes_u2 = list(g.out_edges(n, data=True))[1][2]['lanes']
-    lanes_v1 = list(g.in_edges(n, data=True))[0][2]['lanes']
-    lanes_v2 = list(g.in_edges(n, data=True))[1][2]['lanes']
+
+    edges_u = (coords_to_1, coords_to_2)
+    edges_v = (coords_from_1, coords_from_2)
+    lanes_u1 = edge_to_1_props['lanes']
+    lanes_u2 = edge_to_1_props['lanes']
+    lanes_v1 = edge_from_1_props['lanes']
+    lanes_v2 = edge_from_2_props['lanes']
     if edges_u == edges_v:
         # remove edges and node
         is_deleted = [False, False]
@@ -284,56 +352,89 @@ def simplify_twoways(n, g: nx.MultiDiGraph, check_lanes: bool):
         if is_loop:
             return
         if lanes_u1 == lanes_v2 or lanes_u1 is None or lanes_v2 is None or check_lanes:  # merge only edges with same number of lanes
-            g.remove_edge(edge_u1[1], edge_u1[0])
-            g.remove_edge(edge_u2[0], edge_u2[1])
-            g.add_edge(edge_v2[0], edge_v1[0], id=new_id_out, others=coords_out, lanes=lanes_u1)
+            grapg.remove_edge(coords_to_1[1], coords_to_1[0])
+            grapg.remove_edge(coords_to_2[0], coords_to_2[1])
+            grapg.add_edge(
+                coords_from_2[0],
+                coords_from_1[0],
+                id=new_id_out,
+                others=coords_out,
+                lanes=lanes_u1,
+                from_osm_id=edge_from_2_props['from_osm_id'],
+                to_osm_id=edge_to_1_props['to_osm_id']
+            )
             is_deleted[0] = True
         if lanes_u2 == lanes_v1 or lanes_u2 is None or lanes_v1 is None or check_lanes:  # merge only edges with same number of lanes
-            if edge_u1[1] != edge_u1[0] or edge_u2[0] != edge_u2[1]:  # check  loops
-                g.remove_edge(edge_u1[0], edge_u1[1])
-                g.remove_edge(edge_u2[1], edge_u2[0])
-                g.add_edge(edge_v1[0], edge_v2[0], id=new_id_in, others=coords_in, lanes=lanes_v1)
+            if coords_to_1[1] != coords_to_1[0] or coords_to_2[0] != coords_to_2[1]:  # check  loops
+                grapg.remove_edge(coords_to_1[0], coords_to_1[1])
+                grapg.remove_edge(coords_to_2[1], coords_to_2[0])
+                grapg.add_edge(
+                    coords_from_1[0],
+                    coords_from_2[0],
+                    id=new_id_in,
+                    others=coords_in,
+                    lanes=lanes_v1,
+                    from_osm_id=edge_to_1_props['to_osm_id'],
+                    to_osm_id=edge_from_2_props['from_osm_id']
+                )
                 is_deleted[1] = True
 
         if is_deleted[0] and is_deleted[1] or check_lanes:
-            g.remove_node(n)
+            grapg.remove_node(node)
 
 
 def check_oneway_loop(edge):
     return edge[0] == edge[1]
 
 
-def _prepare_to_saving_optimized(g, json_dict):
-    list_of_edges = list(g.edges(data=True))
+def _prepare_to_saving_optimized(graph, json_dict):
+    list_of_edges = list(graph.edges(data=True))
     temp_dict = dict()
 
+    # map graph edges by ID
     for edge in list_of_edges:
-        id = edge[2]['id']
-        temp_dict[id] = {}
-        temp_dict[id]['node'] = edge[0]
-        temp_dict[id]['neighbour'] = edge[1]
-        temp_dict[id]['coords'] = edge[2]['others']
+        edge_properties = edge[2]
+        temp_dict[edge_properties['id']] = {
+            'node': edge[0],
+            'neighbour': edge[1],
+            'coords': edge_properties['others'],
+            'from_osm_id': edge_properties['from_osm_id'],
+            'to_osm_id': edge_properties['to_osm_id']
+        }
+        # id = edge[2]['id']
+        # temp_dict[id] = {}
+        # temp_dict[id]['node'] = edge[0]
+        # temp_dict[id]['neighbour'] = edge[1]
+        # temp_dict[id]['coords'] = edge[2]['others']
 
+    # map geojson edges by ID
     json_ids = dict()
     for item in json_dict['features']:
         if item['properties']['id'] not in json_ids:
             json_ids[item['properties']['id']] = [item]
 
+    # processing standard edges
     for item in json_dict['features']:
-        data = try_find(item['properties']['id'], temp_dict)
+        data = _try_find(item['properties']['id'], temp_dict)
         if data[0]:
             # item.clear()
             json_ids[item['properties']['id']].append(True)
         else:
             del item['geometry']['coordinates']
             item['geometry']['coordinates'] = data[1:]
+            properties = temp_dict[item['properties']['id']]
+            item['properties']['from_osm_id'] = properties['from_osm_id']
+            item['properties']['to_osm_id'] = properties['to_osm_id']
 
     features = []
 
+    # adding new edges with special id containing _
     for key, value in temp_dict.items():
-        if isinstance(key,str) and "_" in key:
-            data = try_find(key, temp_dict)
+        if isinstance(key, str) and "_" in key:
+            data = _try_find(key, temp_dict)
             item = json_ids[int(key.split("_")[0])][0]
+            item['properties']['from_osm_id'] = value["from_osm_id"]
+            item['properties']['to_osm_id'] = value["to_osm_id"]
             linestring = LineString(coordinates=data[1:])
             # del item['geometry']['coordinates']
             # item['geometry']['coordinates'] = data[1:]

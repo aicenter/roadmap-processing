@@ -54,7 +54,9 @@ def compute_edge_parameters(input_filename: str, output_filename: str):
 		item['properties']["length"] = roadmaptools.geometry.get_length_from_coords(projected_coords)
 
 		# max speed
-		item['properties']['maxspeed'] = roadmaptools.estimate_speed_from_osm.get_posted_speed(item)
+		speed, unit = roadmaptools.estimate_speed_from_osm.get_posted_speed(item)
+		item['properties']['maxspeed'] = speed
+		item['properties']['speed_unit'] = unit
 
 
 	# graph = roadmaptools.inout.load_graph(geojson_content)

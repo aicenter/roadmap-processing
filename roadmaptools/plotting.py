@@ -17,14 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from setuptools.command.rotate import rotate
-
 import roadmaptools.utm
 
 from typing import Tuple, List, Iterable
 from geojson import FeatureCollection
-
-from roadmaptools.utm import TransposedUTM
 
 
 def geojson_edges_iterator(fc: FeatureCollection) -> Iterable[Tuple[Tuple[float, float], Tuple[float, float]]]:

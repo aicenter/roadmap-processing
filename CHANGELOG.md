@@ -17,6 +17,15 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 -->
+# 5.0.0
+## Changed
+- clean.geojson.py updated so that osmids are kept through the process
+- max speed unit is now saved in separate edge property, instead in the max speed string
+
+## Addded
+- map download from overpass by area name
+
+
 # 4.1.0
 
 ## Added

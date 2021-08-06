@@ -21,12 +21,46 @@ from roadmaptools.init import config
 
 import roadmaptools.inout
 import overpass
+import osm2geojson
 
 from typing import Tuple, List
 from roadmaptools.printer import print_info
 
 
-HIGHWAY_FILTER = 'highway~"(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|unclassified_link|residential|residential_link|living_street)"'
+WAY_FILTER = """
+	[highway~"(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|unclassified_link|residential|residential_link|living_street)"]
+	[access!="no"]
+"""
+
+
+def _convert_json_to_geojson(json):
+
+	# way to node list dict
+	node_dict = {}
+	for el in json['elements']:
+		if el['type'] == 'way':
+			node_dict[el['id']] = el['nodes']
+
+	geojson = osm2geojson.json2geojson(json)
+
+	# converting geojson to desired format
+	for feature in geojson['features']:
+		if feature['geometry']['type'] == 'LineString':
+			feature['id'] = feature['properties']['id']
+			del feature['properties']['id']
+			for key, val in feature['properties']['tags'].items():
+				feature['properties'][key] = val
+			del feature['properties']['tags']
+			feature['properties']['nodes'] = node_dict[feature['id']]
+
+	return geojson
+
+
+def call_overpass(query: str, filepath: str):
+	print_info("Downloading map from Overpass API")
+	api = overpass.API(debug=True, timeout=600)
+	out = api.get(query, verbosity='geom', responseformat="json")
+	roadmaptools.inout.save_geojson(_convert_json_to_geojson(out), filepath)
 
 
 def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], filepath: str):
@@ -36,18 +70,31 @@ def download_cities(bounding_boxes: List[Tuple[float, float, float, float]], fil
 	:param filepath: path to output file
 	:return:
 	"""
-	print_info("Downloading map from Overpass API")
-	api = overpass.API(debug=True, timeout=600)
+
 	query = '(('
 
 	for bounding_box in bounding_boxes:
 		if float(bounding_box[0]) >= float(bounding_box[2]) or float(bounding_box[1]) >= float(bounding_box[3]):
 			raise Exception('Wrong order in: ', bounding_box)
-		query += 'way({})[{}][access!="no"];'.format(",".join(map(str, list(bounding_box))), HIGHWAY_FILTER)
+		query += 'way({}){};'.format(",".join(map(str, list(bounding_box))), WAY_FILTER)
 
 	query += ')->.edges;.edges >->.nodes;);'
-	out = api.get(query, verbosity='geom')
-	roadmaptools.inout.save_geojson(out, filepath)
+	call_overpass(query, filepath)
+
+
+def download_by_name(name: str, filepath: str):
+	"""
+	Downloads osm map and saves it as .geojson file.
+	:param name: Name of the area on Open Street Map
+	:param filepath: path to output file
+	:return:
+	"""
+	query = """
+	area[name="{}"];
+	((
+		way(area)
+			{};)->.edges;.edges >->.nodes;);""".format(name, WAY_FILTER)
+	call_overpass(query, filepath)
 
 
 if __name__ == '__main__':
