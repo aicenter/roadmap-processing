@@ -25,6 +25,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 ## Addded
 - map download from overpass by area name
 
+## Removed
+- the `osmtogeojson` script together with the broken `osmread` dependency
+
 
 # 4.1.0
 
